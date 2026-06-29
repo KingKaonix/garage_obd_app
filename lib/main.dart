@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'obd2/connection_interface.dart';
 import 'obd2/elm327_adapter.dart';
 import 'obd2/obd_commands.dart';
 import 'obd2/manufacturer_pids.dart';

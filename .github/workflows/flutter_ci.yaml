@@ -24,13 +24,6 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Debug - Java version
-        run: |
-          echo "=== Java Version ==="
-          java -version 2>&1
-          echo "=== Java Home ==="
-          echo $JAVA_HOME
-
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -38,117 +31,68 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Debug - Flutter version & doctor
-        run: |
-          echo "=== Flutter Version ==="
-          flutter --version 2>&1
-          echo ""
-          echo "=== Flutter Doctor (verbose) ==="
-          flutter doctor -v 2>&1
-
-      - name: Debug - Android SDK Environment
-        run: |
-          echo "=== Android SDK Root ==="
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo ""
-          echo "=== ANDROID_SDK_ROOT contents ==="
-          ls -la $ANDROID_SDK_ROOT 2>&1 || echo "ANDROID_SDK_ROOT not found"
-          echo ""
-          echo "=== Platform Tools ==="
-          ls -la $ANDROID_SDK_ROOT/platform-tools/ 2>&1 || echo "No platform-tools"
-          echo ""
-          echo "=== Platform SDKs ==="
-          ls -la $ANDROID_SDK_ROOT/platforms/ 2>&1 || echo "No platforms dir"
-          echo ""
-          echo "=== Build Tools ==="
-          ls -la $ANDROID_SDK_ROOT/build-tools/ 2>&1 || echo "No build-tools dir"
-          echo ""
-          echo "=== Cmdline Tools ==="
-          ls -la $ANDROID_SDK_ROOT/cmdline-tools/ 2>&1 || echo "No cmdline-tools dir"
-
-      - name: Accept Android SDK licenses
-        run: |
-          yes | flutter doctor --android-licenses 2>&1 || true
-
-      - name: Debug - Flutter doctor after licenses
+      - name: Flutter doctor
         run: flutter doctor -v 2>&1
 
-      - name: Get Flutter dependencies
-        run: |
-          flutter pub get 2>&1
-          echo "=== Dependencies ==="
-          flutter pub deps 2>&1
+      - name: Accept licenses
+        run: yes | flutter doctor --android-licenses 2>&1 || true
 
-      - name: Analyze Dart code
+      - name: Get dependencies
+        run: flutter pub get 2>&1
+
+      - name: Analyze
         run: flutter analyze 2>&1 || true
 
-      - name: Build Android APK (debug)
-        id: build_apk_debug
+      - name: Build APK (debug with verbose)
+        id: build_apk
         run: |
-          echo "=== Building Debug APK ==="
-          flutter build apk --debug 2>&1
-          echo ""
-          echo "=== Build artifacts ==="
-          find build -name "*.apk" -type f 2>/dev/null
+          flutter build apk --debug --verbose 2>&1
+        continue-on-error: true
 
-      - name: Upload Debug APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
+          name: app-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 90
-
-      - name: Build Android APK (release)
-        id: build_apk_release
         continue-on-error: true
-        run: |
-          echo "=== Building Release APK ==="
-          flutter build apk --release 2>&1
-          echo ""
-          echo "=== Build artifacts ==="
-          find build -name "*.apk" -type f 2>/dev/null
 
-      - name: Debug - Release build failure inspection
-        if: steps.build_apk_release.outcome != 'success'
+      - name: Build failure inspection
+        if: steps.build_apk.outcome != 'success'
         run: |
-          echo "=== Release Build Failed ==="
-          echo "--- Gradle build reports ---"
-          find . -path "*/build/reports" -type d 2>/dev/null | head -10
-          find . -name "*.html" -path "*/reports/*" 2>/dev/null | head -10
+          echo "=== BUILD FAILED - Collecting diagnostics ==="
           echo ""
-          echo "--- Flutter build logs ---"
-          find /home/runner -name "flutter_build.log" 2>/dev/null | head -5
-          find /home/runner -name "*.log" -path "*flutter*" 2>/dev/null | head -5
+          echo "--- Last 100 lines of the build log ---"
+          find build -name "*.log" -exec tail -100 {} \; 2>/dev/null || echo "No build logs"
           echo ""
-          echo "--- Gradle daemon logs ---"
-          ls ~/.gradle/daemon/ 2>/dev/null || echo "No gradle daemon"
-          echo ""
-          echo "--- build/app directory contents ---"
-          find build/app -type f -name "*.log" -o -name "*.txt" 2>/dev/null | head -20
-          echo ""
-          echo "--- android directory gradle files ---"
-          find android -name "*.gradle*" -type f 2>/dev/null
-          echo ""
-          echo "--- gradle.properties ---"
-          cat android/gradle.properties 2>/dev/null || echo "no gradle.properties"
-          echo ""
-          echo "--- gradle-wrapper.properties ---"
-          cat android/gradle/wrapper/gradle-wrapper.properties 2>/dev/null || echo "no wrapper"
-          echo ""
-          echo "--- app build.gradle (full) ---"
-          cat android/app/build.gradle.kts
-          echo ""
-          echo "--- Flutter version channel info ---"
-          flutter channel 2>&1 || true
-          flutter --version 2>&1
+          echo "--- Check if Gradle reports exist ---"
+          find . -path "*/reports/*" -name "*.html" 2>/dev/null | head -5
+        shell: bash
 
-      - name: Upload Release APK (if built)
+      - name: Try release build
+        id: build_apk_release
+        run: |
+          flutter build apk --release --verbose 2>&1
+        continue-on-error: true
+
+      - name: Upload Release APK
         if: steps.build_apk_release.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 90
+
+      - name: Build AppBundle
+        if: steps.build_apk_release.outcome == 'success'
+        run: flutter build appbundle --release --verbose 2>&1
+
+      - name: Upload AppBundle
+        if: steps.build_apk_release.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 90
 
   create_release:
@@ -159,13 +103,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download all build artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - name: Debug - Artifacts downloaded
-        run: find artifacts -type f -ls 2>/dev/null || echo "No artifacts found"
 
       - name: Create Release
         id: create_release
@@ -177,11 +118,7 @@ jobs:
           name: Release v${{ github.run_number }}
           body: |
             ## Automated Release v${{ github.run_number }}
-
-            This is an automated release generated from the CI/CD pipeline.
-
-            **Changes:**
-            - Latest code from main branch.
+            Latest code from main branch.
           files: |
             artifacts/app-release-apk/app-release.apk
             artifacts/app-release-aab/app-release.aab

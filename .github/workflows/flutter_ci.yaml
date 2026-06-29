@@ -40,10 +40,24 @@ jobs:
       - name: Analyze
         run: flutter analyze 2>&1 || true
 
-      - name: Build APK (debug)
-        run: flutter build apk --debug 2>&1
+      - name: Build APK (debug with retry)
+        id: build_apk
+        continue-on-error: true
+        run: |
+          echo "=== Attempt 1 ==="
+          flutter build apk --debug --verbose 2>&1
+          if [ $? -ne 0 ]; then
+            echo ""
+            echo "=== Attempt 1 failed. Cleaning and retrying... ==="
+            flutter clean 2>&1
+            flutter pub get 2>&1
+            echo ""
+            echo "=== Attempt 2 ==="
+            flutter build apk --debug --verbose 2>&1
+          fi
 
       - name: Upload Debug APK
+        if: hashFiles('build/app/outputs/flutter-apk/app-debug.apk') != ''
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
@@ -51,6 +65,7 @@ jobs:
           retention-days: 90
 
       - name: Build APK (release)
+        if: hashFiles('build/app/outputs/flutter-apk/app-debug.apk') != ''
         continue-on-error: true
         run: flutter build apk --release 2>&1
 
@@ -85,7 +100,10 @@ jobs:
           path: artifacts
 
       - name: List artifacts
-        run: find artifacts -type f -ls 2>/dev/null || echo "No artifacts"
+        run: |
+          find artifacts -type f -ls 2>/dev/null || echo "No artifacts found"
+          echo "Artifact files found:"
+          find artifacts -type f 2>/dev/null | wc -l
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

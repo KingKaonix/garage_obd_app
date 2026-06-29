@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'connection_interface.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class Elm327Adapter implements Obd2Connection {
-  BluetoothDevice? _device;
-  BluetoothCharacteristic? _tx;
-  BluetoothCharacteristic? _rx;
+  BluetoothConnection? _connection;
   final _rawDataController = StreamController<String>.broadcast();
   final _parsedDataController = StreamController<Map<String, dynamic>>.broadcast();
 
@@ -14,61 +13,109 @@ class Elm327Adapter implements Obd2Connection {
   Stream<String> get rawDataStream => _rawDataController.stream;
   Stream<Map<String, dynamic>> get parsedDataStream => _parsedDataController.stream;
 
+  /// Whether the adapter is currently connected.
+  bool _connected = false;
+  bool get isConnected => _connected;
+
   @override
-  Future<void> connect(String deviceId) async {
-    _device = null;
-    final List<BluetoothDevice> connectedDevices = await FlutterBluePlus.connectedDevices;
+  Future<void> connect(String address) async {
+    // Close any previous connection
+    await disconnect();
+
     try {
-      _device = connectedDevices.firstWhere((d) => d.remoteId.str == deviceId);
+      _connection = await BluetoothConnection.toAddress(address);
+      _connected = true;
+
+      // Listen for incoming data
+      _connection!.input!.listen(
+        (Uint8List data) {
+          final decoded = utf8.decode(data);
+          _rawDataController.add(decoded);
+        },
+        onError: (error) {
+          _rawDataController.addError(error);
+        },
+        onDone: () {
+          _connected = false;
+        },
+      );
+
+      // Initialize ELM327 with AT commands
+      await sendCommand('ATZ');
+      await Future.delayed(const Duration(milliseconds: 500));
+      await sendCommand('ATE0');
+      await Future.delayed(const Duration(milliseconds: 200));
+      await sendCommand('ATL0');
+      await Future.delayed(const Duration(milliseconds: 200));
+      await sendCommand('ATS0');
+      await Future.delayed(const Duration(milliseconds: 200));
+      await sendCommand('ATH0');
+      await Future.delayed(const Duration(milliseconds: 200));
     } catch (e) {
-      await FlutterBluePlus.startScan(timeout: const Duration(seconds: 5));
-      await for (List<ScanResult> results in FlutterBluePlus.scanResults) {
-        for (ScanResult r in results) {
-          if (r.device.remoteId.str == deviceId) {
-            _device = r.device;
-            FlutterBluePlus.stopScan();
-            break;
-          }
-        }
-        if (_device != null) break;
-      }
+      _connected = false;
+      rethrow;
     }
-
-    if (_device == null) throw Exception('Device with ID $deviceId not found.');
-    await _device!.connect(license: License.nonprofit);
-    List<BluetoothService> services = await _device!.discoverServices();
-
-    for (var service in services) {
-      for (var characteristic in service.characteristics) {
-        if (characteristic.properties.write && _tx == null) _tx = characteristic;
-        if (characteristic.properties.notify && _rx == null) {
-          _rx = characteristic;
-          _rx!.setNotifyValue(true);
-          _rx!.lastValueStream.listen((value) => _rawDataController.add(utf8.decode(value)));
-        }
-      }
-    }
-    if (_tx == null || _rx == null) throw Exception('Required Bluetooth characteristics not found.');
-    
-    await sendCommand('ATZ'); await Future.delayed(Duration(milliseconds: 500));
-    await sendCommand('ATE0'); await Future.delayed(Duration(milliseconds: 500));
-    await sendCommand('ATL0'); await Future.delayed(Duration(milliseconds: 500));
-    await sendCommand('ATS0'); await Future.delayed(Duration(milliseconds: 500));
-    await sendCommand('ATH0'); await Future.delayed(Duration(milliseconds: 500));
   }
 
   @override
   Future<void> disconnect() async {
     _rawDataController.close();
     _parsedDataController.close();
-    await _device?.disconnect();
-    _device = null; _tx = null; _rx = null;
+    try {
+      await _connection?.finish();
+    } catch (_) {}
+    _connection = null;
+    _connected = false;
   }
 
   @override
   Future<void> sendCommand(String command) async {
-    if (_tx == null) throw Exception('Bluetooth TX characteristic not available.');
-    await _tx!.write(utf8.encode('$command\r'), withoutResponse: _tx!.properties.writeWithoutResponse);
+    if (_connection == null || !_connected) {
+      throw Exception('Not connected to an ELM327 device.');
+    }
+    _connection!.output.add(utf8.encode('$command\r'));
+    await _connection!.output.allSent;
+  }
+
+  /// Sends a raw OBD command and returns the raw ELM327 response.
+  Future<String> sendRawCommand(String command) async {
+    if (_connection == null || !_connected) {
+      throw Exception('Not connected to an ELM327 device.');
+    }
+
+    final completer = Completer<String>();
+    String response = '';
+    StreamSubscription? sub;
+
+    sub = _rawDataController.stream.listen(
+      (data) {
+        response += data;
+        // ELM327 typically ends responses with '>' prompt
+        if (response.contains('>')) {
+          if (!completer.isCompleted) {
+            completer.complete(response);
+          }
+        } else if (response.contains('\r') || response.contains('\n')) {
+          // Some responses end with CR/LF (no prompt in some modes)
+          if (!completer.isCompleted) {
+            completer.complete(response);
+          }
+        }
+      },
+      onError: (e) {
+        if (!completer.isCompleted) {
+          completer.completeError(e);
+        }
+      },
+    );
+
+    await sendCommand(command);
+
+    try {
+      return await completer.future.timeout(const Duration(seconds: 5));
+    } finally {
+      sub.cancel();
+    }
   }
 
   /// Sends an OBD command and returns the parsed value.
@@ -80,27 +127,5 @@ class Elm327Adapter implements Obd2Connection {
       'unit': obdCommand.unit,
     });
     return parsed;
-  }
-
-  /// Sends a raw command and returns the raw ELM327 response string.
-  Future<String> sendRawCommand(String command) async {
-    if (_tx == null || _rx == null) throw Exception('Not connected to an ELM327 device.');
-
-    String response = '';
-    Completer<String> completer = Completer();
-    final subscription = _rawDataController.stream.listen((data) {
-      response += data;
-      if (response.trim().endsWith('>') || response.contains('\r')) {
-        if (!completer.isCompleted) completer.complete(response);
-      }
-    });
-
-    await sendCommand(command);
-
-    try {
-      return await completer.future.timeout(const Duration(seconds: 5));
-    } finally {
-      subscription.cancel();
-    }
   }
 }

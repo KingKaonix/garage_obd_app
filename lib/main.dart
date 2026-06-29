@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'obd2/elm327_adapter.dart';
 import 'obd2/obd_commands.dart';
 import 'obd2/manufacturer_pids.dart';
@@ -46,66 +46,59 @@ class DeviceScanScreen extends StatefulWidget {
 
 class _DeviceScanScreenState extends State<DeviceScanScreen> {
   final Elm327Adapter _obd2Connection = Elm327Adapter();
-  List<BluetoothDevice> _scanResults = [];
+  final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
+
+  List<BluetoothDevice> _devices = [];
+  List<BluetoothDevice> _bondedDevices = [];
   bool _isScanning = false;
-  BluetoothDevice? _connectedDevice;
-  String _connectionStatus = 'Disconnected';
+  String _statusText = 'Ready';
+  bool _bluetoothEnabled = false;
 
-  _PermState _bluetoothScanPerm = _PermState.unknown;
-  _PermState _bluetoothConnectPerm = _PermState.unknown;
+  // Permissions
+  _PermState _connectPerm = _PermState.unknown;
   _PermState _locationPerm = _PermState.unknown;
-
   bool get _allGranted =>
-      _bluetoothScanPerm == _PermState.granted &&
-      _bluetoothConnectPerm == _PermState.granted &&
+      _connectPerm == _PermState.granted &&
       _locationPerm == _PermState.granted;
 
   @override
   void initState() {
     super.initState();
-    _checkAndRequestPermissions();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _checkPermissions();
+    await _checkBluetooth();
   }
 
   // -----------------------------------------------------------------------
   // Permissions
   // -----------------------------------------------------------------------
-  Future<void> _checkAndRequestPermissions() async {
-    // — 1. Check current status —
-    final scanStatus = await Permission.bluetoothScan.status;
+  Future<void> _checkPermissions() async {
     final connectStatus = await Permission.bluetoothConnect.status;
     final locationStatus = await Permission.locationWhenInUse.status;
 
     setState(() {
-      _bluetoothScanPerm = _toPerm(scanStatus);
-      _bluetoothConnectPerm = _toPerm(connectStatus);
+      _connectPerm = _toPerm(connectStatus);
       _locationPerm = _toPerm(locationStatus);
     });
 
-    // — 2. If any are denied, request them —
-    if (scanStatus.isDenied ||
-        connectStatus.isDenied ||
-        locationStatus.isDenied) {
-      // Build the list of permissions to ask for (skip unknown ones on older API)
-      final perms = <Permission>[];
-      if (await Permission.bluetoothScan.status != PermissionStatus.restricted) {
-        perms.add(Permission.bluetoothScan);
-      }
-      if (await Permission.bluetoothConnect.status != PermissionStatus.restricted) {
-        perms.add(Permission.bluetoothConnect);
-      }
-      // Location may be needed on older Android; always try
-      if (locationStatus.isDenied || locationStatus.isGranted) {
-        perms.add(Permission.locationWhenInUse);
-      }
+    // Request any denied permissions
+    final toRequest = <Permission>[];
+    if (connectStatus.isDenied) toRequest.add(Permission.bluetoothConnect);
+    if (locationStatus.isDenied) toRequest.add(Permission.locationWhenInUse);
 
-      if (perms.isNotEmpty) {
-        final statuses = await perms.request();
-        setState(() {
-          _bluetoothScanPerm = _toPerm(statuses[Permission.bluetoothScan] ?? scanStatus);
-          _bluetoothConnectPerm = _toPerm(statuses[Permission.bluetoothConnect] ?? connectStatus);
-          _locationPerm = _toPerm(statuses[Permission.locationWhenInUse] ?? locationStatus);
-        });
-      }
+    if (toRequest.isNotEmpty) {
+      final statuses = await toRequest.request();
+      setState(() {
+        if (statuses.containsKey(Permission.bluetoothConnect)) {
+          _connectPerm = _toPerm(statuses[Permission.bluetoothConnect]!);
+        }
+        if (statuses.containsKey(Permission.locationWhenInUse)) {
+          _locationPerm = _toPerm(statuses[Permission.locationWhenInUse]!);
+        }
+      });
     }
   }
 
@@ -120,7 +113,31 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
   }
 
   // -----------------------------------------------------------------------
-  // BLE Scan
+  // Bluetooth state
+  // -----------------------------------------------------------------------
+  Future<void> _checkBluetooth() async {
+    final enabled = await _bluetooth.isEnabled;
+    setState(() => _bluetoothEnabled = enabled ?? false);
+
+    // Load bonded devices immediately (from cache, no scan needed)
+    if (_allGranted && enabled == true) {
+      try {
+        final bonded = await _bluetooth.getBondedDevices();
+        setState(() => _bondedDevices = bonded);
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _requestBluetooth() async {
+    final result = await _bluetooth.requestEnable();
+    if (result == true) {
+      setState(() => _bluetoothEnabled = true);
+      _checkBluetooth();
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // Discovery (scan)
   // -----------------------------------------------------------------------
   Future<void> _startScan() async {
     if (!_allGranted) {
@@ -128,60 +145,52 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
       return;
     }
 
-    // Turn on Bluetooth if off
-    if (!(await FlutterBluePlus.adapterState.first == BluetoothAdapterState.on)) {
-      try {
-        await FlutterBluePlus.turnOn();
-      } catch (_) {
-        _showSnackbar('Please turn on Bluetooth to scan', Colors.orange);
-        return;
-      }
+    if (!_bluetoothEnabled) {
+      _showSnackbar('Please turn on Bluetooth', Colors.orange);
+      return;
     }
 
     setState(() {
-      _scanResults = [];
+      _devices = [];
       _isScanning = true;
-      _connectionStatus = 'Scanning for OBD-II devices…';
+      _statusText = 'Scanning for Bluetooth devices…';
     });
 
     try {
-      await FlutterBluePlus.startScan(
-        timeout: const Duration(seconds: 10),
-        androidUsesFineLocation: true,
-      );
-
-      FlutterBluePlus.scanResults.listen((results) {
-        for (final r in results) {
-          if (!_scanResults.any((d) => d.remoteId == r.device.remoteId)) {
-            setState(() => _scanResults.add(r.device));
-          }
-        }
-      });
-
-      FlutterBluePlus.isScanning.listen((state) {
-        if (mounted) {
+      await for (final result in _bluetooth.startDiscovery()) {
+        if (!mounted) break;
+        final device = result.device;
+        // Only show devices with a name (likely OBD adapters)
+        if (device.name != null && device.name!.isNotEmpty) {
           setState(() {
-            _isScanning = state;
-            if (!state) {
-              _connectionStatus =
-                  _scanResults.isEmpty ? 'No devices found' : 'Scan complete';
+            if (!_devices.any((d) => d.address == device.address)) {
+              _devices.add(device);
+              _statusText = 'Found ${_devices.length} device(s)';
             }
           });
         }
-      });
+      }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _connectionStatus = 'Scan error';
-          _isScanning = false;
-        });
         _showSnackbar('Scan error: $e', Colors.red);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isScanning = false;
+          if (_devices.isEmpty) {
+            _statusText = 'No devices found';
+          } else {
+            _statusText = 'Found ${_devices.length} device(s)';
+          }
+        });
       }
     }
   }
 
   void _stopScan() {
-    FlutterBluePlus.stopScan();
+    _bluetooth.cancelDiscovery();
+    setState(() => _isScanning = false);
   }
 
   // -----------------------------------------------------------------------
@@ -189,28 +198,25 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
   // -----------------------------------------------------------------------
   void _connectToDevice(BluetoothDevice device) async {
     _stopScan();
-    setState(() => _connectionStatus = 'Connecting to ${device.platformName}…');
+    setState(() => _statusText = 'Connecting to ${device.name}…');
 
     try {
-      await _obd2Connection.connect(device.remoteId.str);
+      await _obd2Connection.connect(device.address);
       if (!mounted) return;
-      setState(() {
-        _connectedDevice = device;
-        _connectionStatus = 'Connected to ${device.platformName}';
-      });
+      setState(() => _statusText = 'Connected to ${device.name}');
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => ConnectedScreen(
             obd2Connection: _obd2Connection,
-            deviceName: device.platformName,
+            deviceName: device.name ?? device.address,
           ),
         ),
       );
       _disconnect();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _connectionStatus = 'Connection failed');
+      setState(() => _statusText = 'Connection failed');
       _showSnackbar('Failed to connect: $e', Colors.red);
       _disconnect();
     }
@@ -221,10 +227,7 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
       await _obd2Connection.disconnect();
     } catch (_) {}
     if (mounted) {
-      setState(() {
-        _connectedDevice = null;
-        _connectionStatus = 'Disconnected';
-      });
+      setState(() => _statusText = 'Disconnected');
     }
   }
 
@@ -248,11 +251,17 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
         title: const Text('Garage OBD App'),
         centerTitle: true,
         actions: [
-          if (_allGranted)
+          if (_allGranted && _bluetoothEnabled && !_isScanning)
             IconButton(
-              icon: Icon(_isScanning ? Icons.stop_rounded : Icons.bluetooth_searching_rounded),
-              onPressed: _isScanning ? _stopScan : _startScan,
-              tooltip: _isScanning ? 'Stop scan' : 'Scan for devices',
+              icon: const Icon(Icons.bluetooth_searching_rounded),
+              onPressed: _startScan,
+              tooltip: 'Scan for devices',
+            ),
+          if (_isScanning)
+            IconButton(
+              icon: const Icon(Icons.stop_rounded),
+              onPressed: _stopScan,
+              tooltip: 'Stop scan',
             ),
         ],
       ),
@@ -261,17 +270,22 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
   }
 
   Widget _buildBody() {
-    // --- Permissions not yet checked — show loading ---
-    if (_bluetoothScanPerm == _PermState.unknown) {
+    // Permissions not yet checked
+    if (_connectPerm == _PermState.unknown) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // --- Permissions denied ---
+    // Permissions denied
     if (!_allGranted) {
       return _buildPermissionsCard();
     }
 
-    // --- Normal UI ---
+    // Bluetooth disabled
+    if (!_bluetoothEnabled) {
+      return _buildBluetoothOffCard();
+    }
+
+    // Normal UI
     return Column(
       children: [
         // Status bar
@@ -280,124 +294,129 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           color: _isScanning
               ? Colors.blue.shade50
-              : _connectedDevice != null
-                  ? Colors.green.shade50
-                  : Colors.grey.shade100,
+              : Colors.grey.shade100,
           child: Row(
             children: [
               Icon(
-                _isScanning
-                    ? Icons.bluetooth_searching
-                    : _connectedDevice != null
-                        ? Icons.bluetooth_connected
-                        : Icons.bluetooth_disabled,
+                _isScanning ? Icons.bluetooth_searching : Icons.bluetooth,
                 size: 20,
-                color: _isScanning
-                    ? Colors.blue
-                    : _connectedDevice != null
-                        ? Colors.green
-                        : Colors.grey,
+                color: _isScanning ? Colors.blue : Colors.grey,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  _connectionStatus,
+                  _statusText,
                   style: TextStyle(
                     fontSize: 14,
                     color: _isScanning
                         ? Colors.blue.shade700
-                        : _connectedDevice != null
-                            ? Colors.green.shade700
-                            : Colors.grey.shade700,
+                        : Colors.grey.shade700,
                   ),
                 ),
               ),
               if (_isScanning)
-                SizedBox(
-                  width: 16,
-                  height: 16,
+                const SizedBox(
+                  width: 16, height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
             ],
           ),
         ),
 
-        // Scan button (when not scanning and no devices)
-        if (!_isScanning && _scanResults.isEmpty)
+        // --- Bonded (paired) devices section ---
+        if (_bondedDevices.isNotEmpty && !_isScanning) ...[
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Paired Devices',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          ..._bondedDevices.map(
+            (d) => _deviceTile(d, isBonded: true),
+          ),
+          const Divider(indent: 16, endIndent: 16),
+        ],
+
+        // --- Discovered devices ---
+        if (_devices.isNotEmpty)
+          Expanded(
+            child: ListView(
               children: [
-                Icon(Icons.bluetooth_searching_rounded,
-                    size: 72, color: Colors.grey.shade400),
-                const SizedBox(height: 16),
-                Text(
-                  'Scan for nearby OBD-II devices',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                if (!_isScanning && _bondedDevices.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Text(
+                      'Nearby Devices',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
                       ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Make sure your OBD-II adapter is plugged in and powered on.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey.shade500,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                FilledButton.icon(
-                  onPressed: _startScan,
-                  icon: const Icon(Icons.search),
-                  label: const Text('Scan for Devices'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    textStyle: const TextStyle(fontSize: 16),
+                    ),
                   ),
-                ),
+                ..._devices.map((d) => _deviceTile(d)),
               ],
             ),
           ),
 
-        // Device list
-        if (_scanResults.isNotEmpty)
+        // --- Empty state / scan button ---
+        if (_devices.isEmpty && !_isScanning)
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _scanResults.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final device = _scanResults[i];
-                final name = device.platformName.isNotEmpty
-                    ? device.platformName
-                    : 'Unknown Device';
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blue.shade100,
-                    child: const Icon(Icons.bluetooth, color: Colors.blue),
-                  ),
-                  title: Text(name, style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text(device.remoteId.str, style: const TextStyle(fontSize: 12)),
-                  trailing: ElevatedButton(
-                    onPressed: _isScanning ? null : () => _connectToDevice(device),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.bluetooth_searching_rounded,
+                        size: 72, color: Colors.grey.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Scan for OBD-II Bluetooth adapters',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.grey.shade600,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    child: const Text('Connect'),
-                  ),
-                  enabled: !_isScanning,
-                );
-              },
+                    const SizedBox(height: 8),
+                    Text(
+                      'Make sure your OBD adapter is plugged into\nthe vehicle and powered on.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey.shade500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton.icon(
+                      onPressed: _startScan,
+                      icon: const Icon(Icons.search),
+                      label: const Text('Scan for Devices'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 16),
+                        textStyle: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: _checkBluetooth,
+                      icon: const Icon(Icons.refresh, size: 18),
+                      label: const Text('Refresh paired devices'),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
 
-        // No results message
-        if (!_isScanning && _scanResults.isEmpty)
-          const Spacer(),
-
         // Guidance footer
-        if (!_isScanning && _scanResults.isNotEmpty)
+        if (!_isScanning && _devices.isNotEmpty)
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
@@ -414,11 +433,38 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
   }
 
   // -----------------------------------------------------------------------
+  // Device tile
+  // -----------------------------------------------------------------------
+  Widget _deviceTile(BluetoothDevice device, {bool isBonded = false}) {
+    final name = (device.name != null && device.name!.isNotEmpty)
+        ? device.name!
+        : 'Unknown Device';
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: (isBonded ? Colors.green : Colors.blue).shade100,
+        child: Icon(
+          isBonded ? Icons.bluetooth_connected : Icons.bluetooth,
+          color: isBonded ? Colors.green : Colors.blue,
+        ),
+      ),
+      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+      subtitle: Text(device.address, style: const TextStyle(fontSize: 12)),
+      trailing: ElevatedButton(
+        onPressed: _isScanning ? null : () => _connectToDevice(device),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
+        child: Text(isBonded ? 'Connect' : 'Connect'),
+      ),
+      enabled: !_isScanning,
+    );
+  }
+
+  // -----------------------------------------------------------------------
   // Permissions card
   // -----------------------------------------------------------------------
   Widget _buildPermissionsCard() {
-    final anyPermanently = _bluetoothScanPerm == _PermState.permanentlyDenied ||
-        _bluetoothConnectPerm == _PermState.permanentlyDenied ||
+    final anyPermanently = _connectPerm == _PermState.permanentlyDenied ||
         _locationPerm == _PermState.permanentlyDenied;
 
     return Center(
@@ -442,27 +488,18 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Garage OBD needs the following permissions to scan and connect\n'
-                  'to your OBD-II Bluetooth adapter.',
+                  'Garage OBD needs the following permissions to scan and connect\nto your OBD-II Bluetooth adapter.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey.shade600,
                       ),
                 ),
                 const SizedBox(height: 24),
-
-                _permissionRow(
-                  Icons.bluetooth_searching,
-                  'Bluetooth Scan',
-                  'Find nearby OBD-II adapters',
-                  _bluetoothScanPerm,
-                ),
-                const SizedBox(height: 12),
                 _permissionRow(
                   Icons.bluetooth_connected,
                   'Bluetooth Connect',
-                  'Pair and communicate with adapter',
-                  _bluetoothConnectPerm,
+                  'Pair and communicate with OBD adapter',
+                  _connectPerm,
                 ),
                 const SizedBox(height: 12),
                 _permissionRow(
@@ -471,9 +508,7 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
                   'Required to discover Bluetooth devices',
                   _locationPerm,
                 ),
-
                 const SizedBox(height: 28),
-
                 if (anyPermanently)
                   Column(
                     children: [
@@ -491,14 +526,14 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
                       ),
                       const SizedBox(height: 8),
                       TextButton(
-                        onPressed: _checkAndRequestPermissions,
+                        onPressed: _checkPermissions,
                         child: const Text('Check again'),
                       ),
                     ],
                   )
                 else
                   FilledButton.icon(
-                    onPressed: _checkAndRequestPermissions,
+                    onPressed: _checkPermissions,
                     icon: const Icon(Icons.check),
                     label: const Text('Grant Permissions'),
                     style: FilledButton.styleFrom(
@@ -523,7 +558,8 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+              Text(subtitle,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
             ],
           ),
         ),
@@ -532,6 +568,51 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
           color: state == _PermState.granted ? Colors.green : Colors.red.shade400,
         ),
       ],
+    );
+  }
+
+  // -----------------------------------------------------------------------
+  // Bluetooth off card
+  // -----------------------------------------------------------------------
+  Widget _buildBluetoothOffCard() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.bluetooth_disabled, size: 72, color: Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text(
+              'Bluetooth is Off',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Please enable Bluetooth to scan for OBD-II adapters.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _requestBluetooth,
+              icon: const Icon(Icons.bluetooth),
+              label: const Text('Turn on Bluetooth'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _checkBluetooth,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Check again'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

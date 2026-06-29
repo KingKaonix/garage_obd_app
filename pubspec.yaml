@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  flutter_blue_plus: ^2.3.9
+  flutter_bluetooth_serial: ^0.4.0
   sqflite: ^2.4.3
   path_provider: ^2.1.6
   fl_chart: ^1.2.0
@@ -20,13 +20,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-dependency_overrides:
-  flutter_blue_plus_linux:
-    path: ./stub_linux
-  flutter_blue_plus_darwin:
-    path: ./stub_darwin
-  path_provider_foundation:
-    path: ./stub_path_provider_foundation
 
 flutter:
   uses-material-design: true

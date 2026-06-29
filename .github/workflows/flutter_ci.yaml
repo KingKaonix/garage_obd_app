@@ -15,44 +15,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.5'
           channel: 'stable'
           cache: true
 
-      - name: Install licenses
-        run: yes | flutter doctor --android-licenses || true
+      - run: yes | flutter doctor --android-licenses || true
 
-      - name: Build debug APK
-        continue-on-error: true
-        run: |
+      - run: |
           flutter pub get
           flutter build apk --debug
 
-      - name: Find APKs
-        if: always()
+      - name: Collect info
         run: |
-          echo "=== Looking for APKs ==="
-          find / -name "*.apk" -type f 2>/dev/null | head -20
-          echo "=== Build output ==="
-          find . -path "*/flutter-apk/*" -type f 2>/dev/null | head -20
-          echo "=== Build dir ==="
-          ls -la build/ 2>/dev/null || echo "No build dir"
-          ls -la build/app/ 2>/dev/null || echo "No build/app dir"
-          ls -la build/app/outputs/ 2>/dev/null || echo "No build/app/outputs"
+          mkdir -p /tmp/info
+          find / -name "*.apk" -type f 2>/dev/null > /tmp/info/apk-locations.txt
+          ls -laR build/ 2>/dev/null > /tmp/info/build-tree.txt
+          wc -l /tmp/info/apk-locations.txt || true
 
-      - name: Upload workspace
-        if: always()
+      - name: Upload info
         uses: actions/upload-artifact@v4
         with:
-          name: workspace-tree
-          path: build/app/outputs/
+          name: build-info
+          path: /tmp/info/
           retention-days: 90
-          if-no-files-found: warn

@@ -24,7 +24,7 @@ jobs:
           cache: true
       - run: yes | flutter doctor --android-licenses || true
       - run: flutter pub get
-      - run: flutter build apk --debug
+      - run: flutter build apk --debug --target-platform android-arm,android-arm64
       - uses: actions/upload-artifact@v4
         with:
           name: app-apk

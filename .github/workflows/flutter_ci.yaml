@@ -21,26 +21,14 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
           channel: 'stable'
           cache: true
-
       - run: yes | flutter doctor --android-licenses || true
-
-      - run: |
-          flutter pub get
-          flutter build apk --debug
-
-      - name: Collect info
-        run: |
-          mkdir -p /tmp/info
-          find / -name "*.apk" -type f 2>/dev/null > /tmp/info/apk-locations.txt
-          ls -laR build/ 2>/dev/null > /tmp/info/build-tree.txt
-          wc -l /tmp/info/apk-locations.txt || true
-
-      - name: Upload info
-        uses: actions/upload-artifact@v4
+      - run: flutter pub get
+      - run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
         with:
-          name: build-info
-          path: /tmp/info/
+          name: apk
+          path: '**/*.apk'
           retention-days: 90
+          if-no-files-found: error

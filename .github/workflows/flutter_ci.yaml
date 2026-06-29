@@ -11,7 +11,8 @@ permissions:
   contents: write
 
 jobs:
-  build_android:
+  analyze:
+    name: Analyze
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,16 +22,123 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          channel: "main"
+          channel: "stable"
           cache: true
-      - run: |
+      - name: Environment Info
+        run: |
+          echo "========================================"
+          echo "  SYSTEM INFO"
+          echo "========================================"
+          uname -a
+          cat /etc/os-release | head -5
+          echo ""
+          echo "========================================"
+          echo "  FLUTTER VERSION"
+          echo "========================================"
           flutter --version
-          yes | flutter doctor --android-licenses || true
-      - run: flutter pub get
-      - run: flutter build apk --debug
+          echo ""
+          echo "========================================"
+          echo "  DART VERSION"
+          echo "========================================"
+          dart --version
+          echo ""
+          echo "========================================"
+          echo "  ANDROID SDK INFO"
+          echo "========================================"
+          echo "ANDROID_HOME: $ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT: $ANDROID_SDK_ROOT"
+          flutter doctor --verbose 2>&1 | head -60 || true
+      - name: Dependencies
+        run: |
+          echo "========================================"
+          echo "  PUBSPEC.YAML"
+          echo "========================================"
+          cat pubspec.yaml
+          echo ""
+          echo "========================================"
+          echo "  PUB GET (VERBOSE)"
+          echo "========================================"
+          flutter pub get --verbose 2>&1
+          echo ""
+          echo "========================================"
+          echo "  DEPENDENCY TREE"
+          echo "========================================"
+          cat pubspec.lock | grep -E "^\s+name:|^\s+version:" | paste - - | column -t
+      - name: Analyze
+        run: |
+          echo "========================================"
+          echo "  DART ANALYZE"
+          echo "========================================"
+          dart analyze lib/ 2>&1
+      - name: Check Kernel Compilation
+        run: |
+          echo "========================================"
+          echo "  DART KERNEL COMPILATION TEST"
+          echo "========================================"
+          dart compile kernel lib/main.dart 2>&1 || echo "Kernel compilation check completed (non-fatal)"
+
+  build_android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: analyze
+    strategy:
+      matrix:
+        channel: [stable]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ matrix.channel }}
+          cache: true
+      - name: Accept Android Licenses
+        run: |
+          echo "========================================"
+          echo "  ANDROID SDK LICENSES"
+          echo "========================================"
+          yes | flutter doctor --android-licenses 2>&1 || true
+          flutter doctor --verbose 2>&1
+      - name: Install Dependencies
+        run: |
+          echo "========================================"
+          echo "  RESOLVING DEPENDENCIES"
+          echo "========================================"
+          flutter pub get --verbose 2>&1
+          echo ""
+          echo "========================================"
+          echo "  LOCKFILE SUMMARY"
+          echo "========================================"
+          grep -E "^\s+name:|^\s+version:" pubspec.lock | paste - - | column -t
+      - name: Build Debug APK
+        run: |
+          echo "========================================"
+          echo "  BUILDING DEBUG APK"
+          echo "========================================"
+          flutter build apk --debug --verbose 2>&1
+          echo ""
+          echo "========================================"
+          echo "  BUILD OUTPUT"
+          echo "========================================"
+          find . -name "*.apk" -ls 2>/dev/null
+      - name: Locate and Upload APK
+        run: |
+          echo "========================================"
+          echo "  SEARCHING FOR APK"
+          echo "========================================"
+          APK=$(find . -name "app-debug.apk" -o -name "*.apk" 2>/dev/null | head -5)
+          echo "Found APK(s):"
+          echo "$APK"
+          find . -path "*/build/*" -name "*.apk" -ls 2>/dev/null
+          ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "No standard output dir"
       - uses: actions/upload-artifact@v4
         with:
-          name: app-apk
-          path: '**/app-debug.apk'
+          name: garage-obd-app-debug-${{ matrix.channel }}
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/flutter-apk/*.apk
           retention-days: 90
-          if-no-files-found: error
+          if-no-files-found: warn

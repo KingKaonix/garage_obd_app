@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'connection_interface.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'obd_commands.dart';
-import 'manufacturer_pids.dart'; // Import manufacturer-specific PIDs
 
 class Elm327Adapter implements Obd2Connection {
   BluetoothDevice? _device;
@@ -37,7 +35,7 @@ class Elm327Adapter implements Obd2Connection {
     }
 
     if (_device == null) throw Exception('Device with ID $deviceId not found.');
-    await _device!.connect();
+    await _device!.connect(license: License.nonprofit);
     List<BluetoothService> services = await _device!.discoverServices();
 
     for (var service in services) {
@@ -73,8 +71,19 @@ class Elm327Adapter implements Obd2Connection {
     await _tx!.write(utf8.encode('$command\r'), withoutResponse: _tx!.properties.writeWithoutResponse);
   }
 
-  // Refactored to handle both standard and manufacturer-specific commands
+  /// Sends an OBD command and returns the parsed value.
   Future<String> sendObdCommand(dynamic obdCommand) async {
+    String rawResponse = await sendRawCommand(obdCommand.command);
+    String parsed = obdCommand.parser(rawResponse);
+    _parsedDataController.add({
+      obdCommand.description: parsed,
+      'unit': obdCommand.unit,
+    });
+    return parsed;
+  }
+
+  /// Sends a raw command and returns the raw ELM327 response string.
+  Future<String> sendRawCommand(String command) async {
     if (_tx == null || _rx == null) throw Exception('Not connected to an ELM327 device.');
 
     String response = '';
@@ -86,16 +95,10 @@ class Elm327Adapter implements Obd2Connection {
       }
     });
 
-    await sendCommand(obdCommand.command);
+    await sendCommand(command);
 
     try {
-      String rawResponse = await completer.future.timeout(Duration(seconds: 5));
-      String parsed = obdCommand.parser(rawResponse);
-      _parsedDataController.add({
-        obdCommand.description: parsed,
-        'unit': obdCommand.unit,
-      });
-      return parsed;
+      return await completer.future.timeout(const Duration(seconds: 5));
     } finally {
       subscription.cancel();
     }

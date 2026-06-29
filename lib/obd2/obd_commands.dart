@@ -20,79 +20,79 @@ class ObdCommand {
 
 class ObdCommands {
   // --- Mode 01: Current Data ---
-  static const ENGINE_COOLANT_TEMP = ObdCommand(
+  static final ENGINE_COOLANT_TEMP = ObdCommand(
     mode: '01', pid: '05', description: 'Engine Coolant Temp', unit: '°C',
     parser: (raw) => _parseCoolant(raw),
   );
-  static const ENGINE_RPM = ObdCommand(
+  static final ENGINE_RPM = ObdCommand(
     mode: '01', pid: '0C', description: 'Engine RPM', unit: 'rpm',
     parser: (raw) => _parseRpm(raw),
   );
-  static const VEHICLE_SPEED = ObdCommand(
+  static final VEHICLE_SPEED = ObdCommand(
     mode: '01', pid: '0D', description: 'Vehicle Speed', unit: 'km/h',
     parser: (raw) => _parseSpeed(raw),
   );
-  static const CALC_ENGINE_LOAD = ObdCommand(
+  static final CALC_ENGINE_LOAD = ObdCommand(
     mode: '01', pid: '04', description: 'Engine Load', unit: '%',
     parser: (raw) => _parsePercentage(raw),
   );
-  static const TIMING_ADVANCE = ObdCommand(
+  static final TIMING_ADVANCE = ObdCommand(
     mode: '01', pid: '0A', description: 'Timing Advance', unit: 'deg',
     parser: (raw) => _parseTiming(raw),
   );
-  static const MAP_PRESSURE = ObdCommand(
+  static final MAP_PRESSURE = ObdCommand(
     mode: '01', pid: '0B', description: 'Intake Manifold Absolute Pressure', unit: 'kPa',
     parser: (raw) => _parseKpa(raw),
   );
-  static const MAF_FLOW_RATE = ObdCommand(
+  static final MAF_FLOW_RATE = ObdCommand(
     mode: '01', pid: '10', description: 'MAF Air Flow Rate', unit: 'g/s',
     parser: (raw) => _parseMaf(raw),
   );
-  static const THROTTLE_POSITION = ObdCommand(
+  static final THROTTLE_POSITION = ObdCommand(
     mode: '01', pid: '11', description: 'Throttle Position', unit: '%',
     parser: (raw) => _parsePercentage(raw),
   );
-  static const INTAKE_AIR_TEMP = ObdCommand(
+  static final INTAKE_AIR_TEMP = ObdCommand(
     mode: '01', pid: '0F', description: 'Intake Air Temp', unit: '°C',
     parser: (raw) => _parseCoolant(raw), // Same as coolant formula
   );
-  static const SHORT_TERM_FUEL_TRIM_B1 = ObdCommand(
+  static final SHORT_TERM_FUEL_TRIM_B1 = ObdCommand(
     mode: '01', pid: '16', description: 'Short Term Fuel Trim (B1)', unit: '%',
     parser: (raw) => _parseFuelTrim(raw),
   );
-  static const SHORT_TERM_FUEL_TRIM_B2 = ObdCommand(
+  static final SHORT_TERM_FUEL_TRIM_B2 = ObdCommand(
     mode: '01', pid: '17', description: 'Short Term Fuel Trim (B2)', unit: '%',
     parser: (raw) => _parseFuelTrim(raw),
   );
-  static const LONG_TERM_FUEL_TRIM_B1 = ObdCommand(
+  static final LONG_TERM_FUEL_TRIM_B1 = ObdCommand(
     mode: '01', pid: '18', description: 'Long Term Fuel Trim (B1)', unit: '%',
     parser: (raw) => _parseFuelTrim(raw),
   );
-  static const LONG_TERM_FUEL_TRIM_B2 = ObdCommand(
+  static final LONG_TERM_FUEL_TRIM_B2 = ObdCommand(
     mode: '01', pid: '19', description: 'Long Term Fuel Trim (B2)', unit: '%',
     parser: (raw) => _parseFuelTrim(raw),
   );
-  static const FUEL_RAIL_PRESSURE = ObdCommand(
+  static final FUEL_RAIL_PRESSURE = ObdCommand(
     mode: '01', pid: '1A', description: 'Fuel Rail Pressure', unit: 'kPa',
     parser: (raw) => _parseKpa(raw),
   );
-  static const ENGINE_OIL_TEMP = ObdCommand(
+  static final ENGINE_OIL_TEMP = ObdCommand(
     mode: '01', pid: '1C', description: 'Engine Oil Temp', unit: '°C',
     parser: (raw) => _parseCoolant(raw),
   );
-  static const CONTROL_MODULE_VOLTAGE = ObdCommand(
+  static final CONTROL_MODULE_VOLTAGE = ObdCommand(
     mode: '01', pid: '42', description: 'Control Module Voltage', unit: 'V',
     parser: (raw) => _parseVoltage(raw),
   );
 
   // --- Mode 03: DTCs ---
-  static const READ_DTC = ObdCommand(
+  static final READ_DTC = ObdCommand(
     mode: '03', pid: '', description: 'Read Stored DTCs',
     parser: (raw) => _parseDTCs(raw),
   );
 
   // --- Mode 04: Clear DTCs ---
-  static const CLEAR_DTC = ObdCommand(
+  static final CLEAR_DTC = ObdCommand(
     mode: '04', pid: '', description: 'Clear Stored DTCs',
   );
 

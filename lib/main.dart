@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'obd2/elm327_adapter.dart';
@@ -180,7 +179,7 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
                         child: ListTile(
-                          leading: const Icon(Icons.bluetooth_device_sharp),
+                          leading: const Icon(Icons.bluetooth),
                           title: Text(device.platformName.isEmpty ? 'Unknown Device' : device.platformName),
                           subtitle: Text(device.remoteId.str),
                           trailing: ElevatedButton.icon(
@@ -253,7 +252,7 @@ class _ConnectedScreenState extends State<ConnectedScreen> {
                 child: Column(
                   children: [
                     DropdownButtonFormField<dynamic>(
-                      value: _selectedPidCommand,
+                      initialValue: _selectedPidCommand,
                       decoration: const InputDecoration(
                         labelText: 'Select PID',
                         border: OutlineInputBorder(),
@@ -288,7 +287,7 @@ class _ConnectedScreenState extends State<ConnectedScreen> {
                               ...ManufacturerPids.getPidsForManufacturer(manufacturer)
                                   .map((c) => DropdownMenuItem(value: c, child: Text(c.description))),
                             ]),
-                      ].where((item) => item?.value != null || (item?.child is Text && !(item!.child as Text).data!.startsWith('--'))).cast<DropdownMenuItem<dynamic>>().toList(),
+                      ].where((item) => item.value != null || (item.child is Text && !(item.child as Text).data!.startsWith('--'))).cast<DropdownMenuItem<dynamic>>().toList(),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
@@ -376,7 +375,7 @@ class _ConnectedScreenState extends State<ConnectedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     DropdownButtonFormField<SpecialFunction>(
-                      value: _selectedSpecialFunction,
+                      initialValue: _selectedSpecialFunction,
                       decoration: const InputDecoration(
                         labelText: 'Select Special Function',
                         border: OutlineInputBorder(),

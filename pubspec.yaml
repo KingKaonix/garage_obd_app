@@ -19,5 +19,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+dependency_overrides:
+  flutter_blue_plus_linux:
+    path: ./stub_linux
+  flutter_blue_plus_darwin:
+    path: ./stub_darwin
+  path_provider_foundation:
+    path: ./stub_path_provider_foundation
+
 flutter:
   uses-material-design: true

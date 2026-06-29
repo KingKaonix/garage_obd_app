@@ -31,9 +31,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Flutter doctor
-        run: flutter doctor -v 2>&1
-
       - name: Accept licenses
         run: yes | flutter doctor --android-licenses 2>&1 || true
 
@@ -43,40 +40,22 @@ jobs:
       - name: Analyze
         run: flutter analyze 2>&1 || true
 
-      - name: Build APK (debug with verbose)
-        id: build_apk
-        run: |
-          flutter build apk --debug --verbose 2>&1
-        continue-on-error: true
+      - name: Build APK (debug)
+        run: flutter build apk --debug 2>&1
 
-      - name: Upload APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 90
-        continue-on-error: true
 
-      - name: Build failure inspection
-        if: steps.build_apk.outcome != 'success'
-        run: |
-          echo "=== BUILD FAILED - Collecting diagnostics ==="
-          echo ""
-          echo "--- Last 100 lines of the build log ---"
-          find build -name "*.log" -exec tail -100 {} \; 2>/dev/null || echo "No build logs"
-          echo ""
-          echo "--- Check if Gradle reports exist ---"
-          find . -path "*/reports/*" -name "*.html" 2>/dev/null | head -5
-        shell: bash
-
-      - name: Try release build
-        id: build_apk_release
-        run: |
-          flutter build apk --release --verbose 2>&1
+      - name: Build APK (release)
         continue-on-error: true
+        run: flutter build apk --release 2>&1
 
       - name: Upload Release APK
-        if: steps.build_apk_release.outcome == 'success'
+        if: hashFiles('build/app/outputs/flutter-apk/app-release.apk') != ''
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
@@ -84,11 +63,11 @@ jobs:
           retention-days: 90
 
       - name: Build AppBundle
-        if: steps.build_apk_release.outcome == 'success'
-        run: flutter build appbundle --release --verbose 2>&1
+        if: hashFiles('build/app/outputs/flutter-apk/app-release.apk') != ''
+        run: flutter build appbundle --release 2>&1
 
       - name: Upload AppBundle
-        if: steps.build_apk_release.outcome == 'success'
+        if: hashFiles('build/app/outputs/bundle/release/app-release.aab') != ''
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
@@ -100,16 +79,15 @@ jobs:
     needs: build_android
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
+      - name: List artifacts
+        run: find artifacts -type f -ls 2>/dev/null || echo "No artifacts"
+
       - name: Create Release
-        id: create_release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,9 +95,7 @@ jobs:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
           body: |
-            ## Automated Release v${{ github.run_number }}
-            Latest code from main branch.
-          files: |
-            artifacts/app-release-apk/app-release.apk
-            artifacts/app-release-aab/app-release.aab
+            ## Release v${{ github.run_number }}
+            Automated build from main branch.
+          files: artifacts/**/*
           fail_on_unmatched_files: false

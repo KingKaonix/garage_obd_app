@@ -21,39 +21,33 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Setup Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      - name: Prep
+      - name: Install SDK components
         run: |
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-34" "build-tools;34.0.0" 2>&1 || true
           yes | flutter doctor --android-licenses 2>&1 || true
-          flutter pub get 2>&1
 
-      - name: Build APK
-        id: build
+      - name: Build
         continue-on-error: true
         run: |
+          flutter clean 2>&1
+          flutter pub get 2>&1
           flutter build apk --debug 2>&1
-          echo "status=$?" >> $GITHUB_OUTPUT
 
-      - name: Show files
-        if: always()
-        run: |
-          set +e
-          find /home/runner/work -name "*.apk" 2>/dev/null | head -5
-          find . -name "*.apk" 2>/dev/null | head -5
-          ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "NO APK DIR"
-          ls -la build/ 2>/dev/null | head -5 || echo "NO BUILD DIR"
-          echo "=== Workspace root ==="
-          ls -la $GITHUB_WORKSPACE/ 2>/dev/null | head -10
-
-      - name: Upload any APK
+      - name: Upload
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: '**/*.apk'
+          path: '**/app-debug.apk'
           retention-days: 90
-          if-no-files-found: ignore
+          if-no-files-found: warn

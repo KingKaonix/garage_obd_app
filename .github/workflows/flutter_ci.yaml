@@ -45,54 +45,38 @@ jobs:
         run: flutter analyze 2>&1 || true
 
       - name: Build APK (debug)
-        id: build_apk
-        continue-on-error: true
-        run: |
-          flutter build apk --debug 2>&1 || (flutter clean && flutter pub get && flutter build apk --debug 2>&1 || true)
+        run: flutter build apk --debug 2>&1
 
       - name: Build APK (release)
         continue-on-error: true
-        run: |
-          flutter build apk --release 2>&1 || true
+        run: flutter build apk --release 2>&1
 
-      - name: Prepare artifacts
-        run: |
-          mkdir -p artifacts
-          if [ -f build/app/outputs/flutter-apk/app-debug.apk ]; then
-            cp build/app/outputs/flutter-apk/app-debug.apk artifacts/garage-obd-debug.apk
-          fi
-          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
-            cp build/app/outputs/flutter-apk/app-release.apk artifacts/garage-obd-release.apk
-          fi
-          if [ -f build/app/outputs/flutter-apk/app.apk ]; then
-            cp build/app/outputs/flutter-apk/app.apk artifacts/garage-obd.apk
-          fi
-          echo "=== Artifacts ==="
-          ls -la artifacts/ 2>/dev/null || echo "No artifacts found"
-
-      - name: Upload APKs as workflow artifacts
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: garage-obd-apks
-          path: artifacts/
+          name: garage-obd-apk
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app.apk
           retention-days: 90
+          if-no-files-found: warn
 
-      - name: Create GitHub Release
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           name: Build ${{ github.run_id }}
           tag: build-${{ github.run_id }}
-          artifacts: artifacts/*
+          artifacts: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app.apk
           artifactContentType: application/vnd.android.package-archive
-          replacesArtifacts: true
+          omitBodyDuringUpdate: true
           body: |
             ## Garage OBD App - Build ${{ github.run_id }}
 
-            Automated build from main branch.
-
-            **APK Downloads:**
-            - garage-obd-debug.apk - Debug build (unoptimized, more logging)
-            - garage-obd-release.apk - Release build (optimized, signed)
+            Automated build from `main` branch.
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
+          replacesArtifacts: true

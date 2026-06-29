@@ -31,9 +31,15 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
           channel: 'stable'
           cache: true
+
+      - name: Flutter version & doctor
+        run: |
+          flutter --version
+          flutter doctor -v
+          echo "flutter.sdk=$(which flutter | xargs dirname | xargs dirname)" > android/local.properties
+          cat android/local.properties
 
       - name: Accept licenses
         run: yes | flutter doctor --android-licenses 2>&1 || true
@@ -44,22 +50,14 @@ jobs:
       - name: Build debug APK
         id: build
         run: |
-          set -o pipefail
-          flutter build apk --debug 2>&1 | tee /tmp/build.log
+          flutter build apk --debug 2>&1
         shell: bash
 
-      - name: Save build log
-        if: always()
-        run: |
-          mkdir -p /tmp/artifacts
-          cp /tmp/build.log /tmp/artifacts/build.log 2>/dev/null || echo "No build log"
-          ls -la /tmp/artifacts/
-
-      - name: Upload build output
-        if: always()
+      - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
-          path: /tmp/artifacts/
+          name: garage-obd-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 90
-          if-no-files-found: warn
+          if-no-files-found: error

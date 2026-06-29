@@ -18,43 +18,181 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Debug - Java version
+        run: |
+          echo "=== Java Version ==="
+          java -version 2>&1
+          echo "=== Java Home ==="
+          echo $JAVA_HOME
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.x'
           channel: 'stable'
+          cache: true
 
-      - name: Set up Android SDK paths
+      - name: Debug - Flutter version
         run: |
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+          echo "=== Flutter Version ==="
+          flutter --version 2>&1
+          echo ""
+          echo "=== Flutter Doctor (verbose) ==="
+          flutter doctor -v 2>&1
 
-      - name: Accept Android SDK licenses and install tools
+      - name: Debug - Android SDK Environment
         run: |
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses 2>/dev/null || true
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-34" 2>/dev/null || true
+          echo "=== Android SDK Root ==="
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo ""
+          echo "=== ANDROID_SDK_ROOT contents ==="
+          ls -la $ANDROID_SDK_ROOT 2>&1 || echo "ANDROID_SDK_ROOT not found"
+          echo ""
+          echo "=== Platform Tools ==="
+          ls -la $ANDROID_SDK_ROOT/platform-tools/ 2>&1 || echo "No platform-tools"
+          echo ""
+          echo "=== Platform SDKs ==="
+          ls -la $ANDROID_SDK_ROOT/platforms/ 2>&1 || echo "No platforms dir"
+          echo ""
+          echo "=== Build Tools ==="
+          ls -la $ANDROID_SDK_ROOT/build-tools/ 2>&1 || echo "No build-tools dir"
+          echo ""
+          echo "=== Cmdline Tools ==="
+          ls -la $ANDROID_SDK_ROOT/cmdline-tools/ 2>&1 || echo "No cmdline-tools dir"
+          ls -la $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/ 2>&1 || echo "No latest/bin dir"
+          echo ""
+          echo "=== Gradle cache ==="
+          ls ~/.gradle/ 2>&1 || echo "No gradle dir"
+
+      - name: Accept Android SDK licenses
+        run: |
+          echo "=== Accepting SDK Licenses ==="
+          if command -v sdkmanager &> /dev/null; then
+            echo "sdkmanager found in PATH"
+            yes | sdkmanager --licenses 2>&1 || true
+          elif [ -f "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
+            echo "sdkmanager found at ANDROID_SDK_ROOT path"
+            yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses 2>&1 || true
+          else
+            echo "sdkmanager not found - checking alternatives"
+            find / -name "sdkmanager" -type f 2>/dev/null | head -5 || echo "sdkmanager not found anywhere"
+          fi
+          echo ""
+          echo "=== Installing Required SDK Components ==="
+          yes | flutter doctor --android-licenses 2>&1 || true
+
+      - name: Debug - Flutter doctor after licenses
+        run: |
+          echo "=== Flutter Doctor Post-Licenses ==="
+          flutter doctor -v 2>&1
 
       - name: Get Flutter dependencies
-        run: flutter pub get
+        run: |
+          echo "=== Pub Get ==="
+          flutter pub get 2>&1
+          echo ""
+          echo "=== Dependencies Tree ==="
+          flutter pub deps 2>&1
 
-      - name: Build Android APK
-        run: flutter build apk --release
+      - name: Analyze Dart code
+        run: |
+          echo "=== Dart Analyzer ==="
+          flutter analyze 2>&1 || true
+
+      - name: Debug - Android Gradle Configuration
+        run: |
+          echo "=== android/build.gradle.kts ==="
+          cat android/build.gradle.kts
+          echo ""
+          echo "=== android/app/build.gradle.kts ==="
+          cat android/app/build.gradle.kts
+          echo ""
+          echo "=== android/settings.gradle.kts ==="
+          cat android/settings.gradle.kts
+          echo ""
+          echo "=== android/gradle.properties ==="
+          cat android/gradle.properties
+          echo ""
+          echo "=== gradle-wrapper.properties ==="
+          cat android/gradle/wrapper/gradle-wrapper.properties
+          echo ""
+          echo "=== pubspec.yaml ==="
+          cat pubspec.yaml
+
+      - name: Debug - List all Dart source files
+        run: |
+          echo "=== Dart Source Files ==="
+          find lib -name "*.dart" -type f | sort
+          echo ""
+          echo "=== Test Files ==="
+          find test -name "*.dart" -type f | sort
+          echo ""
+          echo "=== Git status ==="
+          git log --oneline -5
+          git status
+
+      - name: Build Android APK (debug first for faster feedback)
+        id: build_apk_debug
+        continue-on-error: true
+        run: |
+          echo "=== Building Debug APK ==="
+          flutter build apk --debug 2>&1
+          echo ""
+          echo "=== APK Output ==="
+          find build -name "*.apk" -type f 2>/dev/null || echo "No APK found"
+
+      - name: Build Android APK (release)
+        id: build_apk_release
+        run: |
+          echo "=== Building Release APK ==="
+          flutter build apk --release 2>&1
+          echo ""
+          echo "=== APK Output ==="
+          find build -name "*.apk" -type f 2>/dev/null || echo "No APK found"
+
+      - name: Debug - Build output inspection
+        if: failure()
+        run: |
+          echo "=== Build Failure Diagnostics ==="
+          echo "--- Gradle build reports ---"
+          find . -path "*/build/reports" -type d 2>/dev/null | head -5
+          find . -name "*.html" -path "*/reports/*" 2>/dev/null | head -5
+          echo "--- Flutter build logs ---"
+          find . -name "*.log" -path "*/flutter*" 2>/dev/null | head -5
+          find . -name "flutter_build.log" 2>/dev/null | head -5
+          echo "--- Gradle daemon logs ---"
+          ls ~/.gradle/daemon/ 2>/dev/null || echo "No gradle daemon"
+          echo "--- Last 200 lines of gradle output ---"
+          find . -name "*.log" -path "*gradle*" -exec tail -200 {} \; 2>/dev/null || echo "No gradle logs"
 
       - name: Upload Android APK
+        if: steps.build_apk_release.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 90
 
       - name: Build Android AppBundle
-        run: flutter build appbundle --release
+        if: steps.build_apk_release.outcome == 'success'
+        run: |
+          echo "=== Building Release AppBundle ==="
+          flutter build appbundle --release 2>&1
 
       - name: Upload Android AppBundle
+        if: steps.build_apk_release.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
           path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 90
 
   create_release:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -68,6 +206,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      - name: Debug - Artifacts downloaded
+        run: |
+          echo "=== Downloaded Artifacts ==="
+          find artifacts -type f -ls 2>/dev/null || echo "No artifacts found"
 
       - name: Create Release
         id: create_release
@@ -87,3 +230,4 @@ jobs:
           files: |
             artifacts/app-release-apk/app-release.apk
             artifacts/app-release-aab/app-release.aab
+          fail_on_unmatched_files: false

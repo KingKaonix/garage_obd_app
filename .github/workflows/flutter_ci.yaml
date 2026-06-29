@@ -21,10 +21,13 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
+          channel: 'beta'
           cache: true
-      - run: yes | flutter doctor --android-licenses || true
+      - run: |
+          flutter --version
+          yes | flutter doctor --android-licenses || true
       - run: flutter pub get
-      - run: flutter build apk --debug --target-platform android-arm,android-arm64
+      - run: flutter build apk --debug
       - uses: actions/upload-artifact@v4
         with:
           name: app-apk

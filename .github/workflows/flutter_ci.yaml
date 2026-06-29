@@ -11,6 +11,10 @@ on:
       - develop
   workflow_dispatch:
 
+permissions:
+  contents: write
+  actions: read
+
 jobs:
   build_android:
     runs-on: ubuntu-latest
@@ -40,7 +44,7 @@ jobs:
       - name: Analyze
         run: flutter analyze 2>&1 || true
 
-      - name: Build APK (debug with retry)
+      - name: Build APK (debug)
         id: build_apk
         continue-on-error: true
         run: |
@@ -57,9 +61,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
-          path: |
-            build/app/outputs/flutter-apk/app-debug.apk
-            build/app/outputs/flutter-apk/app.apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 90
 
       - name: Build APK (release)
@@ -71,24 +73,34 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-apk/app.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 90
 
   create_release:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build_android
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Download all artifacts
+      - name: Download debug APK
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
+          name: app-apk
           path: artifacts
 
-      - name: Create Release
+      - name: Download release APK
         continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-apk
+          path: artifacts
+
+      - name: List downloaded files
+        run: ls -la artifacts/ 2>/dev/null || echo "No artifacts"
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -96,6 +108,7 @@ jobs:
           tag_name: build-${{ github.run_id }}
           name: Build ${{ github.run_id }}
           body: |
+            ## Garage OBD App - Build ${{ github.run_id }}
             Automated build from main branch.
-          files: artifacts/**/*
+          files: artifacts/*
           fail_on_unmatched_files: false

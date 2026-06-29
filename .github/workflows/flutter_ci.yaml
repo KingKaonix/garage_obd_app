@@ -21,22 +21,13 @@ jobs:
           java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.29.2"
-          channel: 'stable'
           cache: true
       - run: yes | flutter doctor --android-licenses || true
-      - run: |
-          flutter pub get
-          flutter build apk --debug
-      - name: Collect APK
-        run: |
-          mkdir -p /tmp/out
-          find . -name "*.apk" -exec cp {} /tmp/out/ \;
-          find / -name "*.apk" -exec cp {} /tmp/out/ \; 2>/dev/null || true
-          ls -la /tmp/out/
+      - run: flutter pub get
+      - run: flutter build apk --debug
       - uses: actions/upload-artifact@v4
         with:
-          name: apk
-          path: /tmp/out/
+          name: app-apk
+          path: '**/app-debug.apk'
           retention-days: 90
           if-no-files-found: error

@@ -31,61 +31,41 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.2'
+          flutter-version: '3.x'
           channel: 'stable'
           cache: true
 
       - name: Accept licenses
         run: yes | flutter doctor --android-licenses 2>&1 || true
 
-      - name: Doctor
-        run: flutter doctor -v 2>&1
-
       - name: Get dependencies
         run: flutter pub get 2>&1
 
-      - name: Build debug APK with verbose log
+      - name: Build debug APK
         run: |
-          flutter build apk --debug 2>&1 | tee /tmp/build.log
+          flutter build apk --debug 2>&1
+          echo "exit_code=$?" >> $GITHUB_ENV
         shell: bash
 
-      - name: Upload verbose build log on failure
+      - name: Debug - Print gradle daemon logs
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: /tmp/build.log
+        run: |
+          find ~/.gradle -name "*.log" 2>/dev/null | head -5
+          find . -path "*/build/reports" -type d 2>/dev/null | head -5
+          find . -name "*.html" -path "*/reports/*" 2>/dev/null
+          cat ~/.gradle/daemon/*/daemon-*.log 2>/dev/null | tail -100 || true
 
       - name: Build release APK
+        if: success()
         continue-on-error: true
         run: flutter build apk --release 2>&1 || true
 
-      - name: Upload APKs
-        if: success()
+      - name: Upload APKs and logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: garage-obd-apk
           path: |
-            build/app/outputs/flutter-apk/app-debug.apk
-            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/*.apk
           retention-days: 90
-          if-no-files-found: warn
-
-      - name: Create Release
-        if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: ncipollo/release-action@v1
-        with:
-          name: Build ${{ github.run_id }}
-          tag: build-${{ github.run_id }}
-          artifacts: |
-            build/app/outputs/flutter-apk/app-debug.apk
-            build/app/outputs/flutter-apk/app-release.apk
-          artifactContentType: application/vnd.android.package-archive
-          omitBodyDuringUpdate: true
-          body: |
-            ## Garage OBD App - Build ${{ github.run_id }}
-            Automated build from `main` branch.
-          token: ${{ secrets.GITHUB_TOKEN }}
-          allowUpdates: true
-          replacesArtifacts: true
-          skipIfReleaseExists: false
+          if-no-files-found: ignore

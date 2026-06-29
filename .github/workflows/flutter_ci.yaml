@@ -42,30 +42,24 @@ jobs:
         run: flutter pub get 2>&1
 
       - name: Build debug APK
+        id: build
         run: |
-          flutter build apk --debug 2>&1
-          echo "exit_code=$?" >> $GITHUB_ENV
+          set -o pipefail
+          flutter build apk --debug 2>&1 | tee /tmp/build.log
         shell: bash
 
-      - name: Debug - Print gradle daemon logs
-        if: failure()
+      - name: Save build log
+        if: always()
         run: |
-          find ~/.gradle -name "*.log" 2>/dev/null | head -5
-          find . -path "*/build/reports" -type d 2>/dev/null | head -5
-          find . -name "*.html" -path "*/reports/*" 2>/dev/null
-          cat ~/.gradle/daemon/*/daemon-*.log 2>/dev/null | tail -100 || true
+          mkdir -p /tmp/artifacts
+          cp /tmp/build.log /tmp/artifacts/build.log 2>/dev/null || echo "No build log"
+          ls -la /tmp/artifacts/
 
-      - name: Build release APK
-        if: success()
-        continue-on-error: true
-        run: flutter build apk --release 2>&1 || true
-
-      - name: Upload APKs and logs
+      - name: Upload build output
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: garage-obd-apk
-          path: |
-            build/app/outputs/flutter-apk/*.apk
+          name: build-output
+          path: /tmp/artifacts/
           retention-days: 90
-          if-no-files-found: ignore
+          if-no-files-found: warn

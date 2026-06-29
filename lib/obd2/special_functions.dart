@@ -901,84 +901,45 @@ class SpecialFunctionsManager {
     const OilLifeResetFunction(),
     const OilLifeResetFunction(manufacturer: 'Ford'),
     // Dynamically added GM functions
-GmCadillacCadillacBrakePedalPositionSensorLearnFunction() : super(name: 'Cadillac Cadillac Brake Pedal Position Sensor Learn', description: 'Cadillac Cadillac Brake Pedal Position Sensor Learn for GM vehicles.', manufacturer: 'GM');
-GmCadillacEngineOilPressureValveOffFunction() : super(name: 'Cadillac Engine Oil Pressure Valve Off', description: 'Cadillac Engine Oil Pressure Valve Off for GM vehicles.', manufacturer: 'GM');
-GmCadillacEngineOilPressureValveOnFunction() : super(name: 'Cadillac Engine Oil Pressure Valve On', description: 'Cadillac Engine Oil Pressure Valve On for GM vehicles.', manufacturer: 'GM');
-GmCadillacEngineOilPressureValveReleaseFunction() : super(name: 'Cadillac Engine Oil Pressure Valve Release', description: 'Cadillac Engine Oil Pressure Valve Release for GM vehicles.', manufacturer: 'GM');
-GmCadillacEvapServiceBayTestFunction() : super(name: 'Cadillac Evap Service Bay Test', description: 'Cadillac Evap Service Bay Test for GM vehicles.', manufacturer: 'GM');
-GmCadillacFuelRailPressureReliefValveLearnFunction() : super(name: 'Cadillac Fuel Rail Pressure Relief Valve Learn', description: 'Cadillac Fuel Rail Pressure Relief Valve Learn for GM vehicles.', manufacturer: 'GM');
-GmCadillacGeneratorTerminalOffFunction() : super(name: 'Cadillac Generator Terminal Off', description: 'Cadillac Generator Terminal Off for GM vehicles.', manufacturer: 'GM');
-GmCadillacGeneratorTerminalOnFunction() : super(name: 'Cadillac Generator Terminal On', description: 'Cadillac Generator Terminal On for GM vehicles.', manufacturer: 'GM');
-GmCadillacGeneratorTerminalReleaseFunction() : super(name: 'Cadillac Generator Terminal Release', description: 'Cadillac Generator Terminal Release for GM vehicles.', manufacturer: 'GM');
-GmCadillacHeatedO2SensorHeaterLearnFunction() : super(name: 'Cadillac Heated O2 Sensor Heater Learn', description: 'Cadillac Heated O2 Sensor Heater Learn for GM vehicles.', manufacturer: 'GM');
-GmCadillacIdleLearnFunction() : super(name: 'Cadillac Idle Learn', description: 'Cadillac Idle Learn for GM vehicles.', manufacturer: 'GM');
-GmCadillacIgnitionTimingOnFunction() : super(name: 'Cadillac Ignition Timing On', description: 'Cadillac Ignition Timing On for GM vehicles.', manufacturer: 'GM');
-GmCadillacIgnitionTimingReleaseFunction() : super(name: 'Cadillac Ignition Timing Release', description: 'Cadillac Ignition Timing Release for GM vehicles.', manufacturer: 'GM');
-GmCadillacMilLampOffFunction() : super(name: 'Cadillac Mil Lamp Off', description: 'Cadillac Mil Lamp Off for GM vehicles.', manufacturer: 'GM');
-GmCadillacMilLampOnFunction() : super(name: 'Cadillac Mil Lamp On', description: 'Cadillac Mil Lamp On for GM vehicles.', manufacturer: 'GM');
-GmCadillacMilLampReleaseFunction() : super(name: 'Cadillac Mil Lamp Release', description: 'Cadillac Mil Lamp Release for GM vehicles.', manufacturer: 'GM');
-GmCadillacRemoteVehicleStartDisableHistoryResetFunction() : super(name: 'Cadillac Remote Vehicle Start Disable History Reset', description: 'Cadillac Remote Vehicle Start Disable History Reset for GM vehicles.', manufacturer: 'GM');
-GmCadillacStarterRelayOffFunction() : super(name: 'Cadillac Starter Relay Off', description: 'Cadillac Starter Relay Off for GM vehicles.', manufacturer: 'GM');
-GmCadillacStarterRelayOnFunction() : super(name: 'Cadillac Starter Relay On', description: 'Cadillac Starter Relay On for GM vehicles.', manufacturer: 'GM');
-GmCadillacStarterRelayReleaseFunction() : super(name: 'Cadillac Starter Relay Release', description: 'Cadillac Starter Relay Release for GM vehicles.', manufacturer: 'GM');
-GmCadillacSuperchargerBypassSolenoidValveDecreaseFunction() : super(name: 'Cadillac Supercharger Bypass Solenoid Valve Decrease', description: 'Cadillac Supercharger Bypass Solenoid Valve Decrease for GM vehicles.', manufacturer: 'GM');
-GmCadillacSuperchargerBypassSolenoidValveIncreaseFunction() : super(name: 'Cadillac Supercharger Bypass Solenoid Valve Increase', description: 'Cadillac Supercharger Bypass Solenoid Valve Increase for GM vehicles.', manufacturer: 'GM');
-GmCadillacSuperchargerBypassSolenoidValveReleaseFunction() : super(name: 'Cadillac Supercharger Bypass Solenoid Valve Release', description: 'Cadillac Supercharger Bypass Solenoid Valve Release for GM vehicles.', manufacturer: 'GM');
-GmInjCodeFunction() : super(name: 'Inj Code', description: 'Inj Code for GM vehicles.', manufacturer: 'GM');
-GmInjReadFunction() : super(name: 'Inj Read', description: 'Inj Read for GM vehicles.', manufacturer: 'GM');
-GmSaturnAcRelayOffFunction() : super(name: 'Saturn Ac Relay Off', description: 'Saturn Ac Relay Off for GM vehicles.', manufacturer: 'GM');
-GmSaturnAcRelayOnFunction() : super(name: 'Saturn Ac Relay On', description: 'Saturn Ac Relay On for GM vehicles.', manufacturer: 'GM');
-GmSaturnCoolingFanRelayOffFunction() : super(name: 'Saturn Cooling Fan Relay Off', description: 'Saturn Cooling Fan Relay Off for GM vehicles.', manufacturer: 'GM');
-GmSaturnCoolingFanRelayOnFunction() : super(name: 'Saturn Cooling Fan Relay On', description: 'Saturn Cooling Fan Relay On for GM vehicles.', manufacturer: 'GM');
-GmSaturnIdleSparkDecreaseFunction() : super(name: 'Saturn Idle Spark Decrease', description: 'Saturn Idle Spark Decrease for GM vehicles.', manufacturer: 'GM');
-GmSaturnIdleSparkIncreaseFunction() : super(name: 'Saturn Idle Spark Increase', description: 'Saturn Idle Spark Increase for GM vehicles.', manufacturer: 'GM');
-GmSaturnRvsDisplayHistoryResetFunction() : super(name: 'Saturn Rvs Display History Reset', description: 'Saturn Rvs Display History Reset for GM vehicles.', manufacturer: 'GM');
-GmSaturnSparkRetardDecreaseFunction() : super(name: 'Saturn Spark Retard Decrease', description: 'Saturn Spark Retard Decrease for GM vehicles.', manufacturer: 'GM');
-GmSaturnSparkRetardIncreaseFunction() : super(name: 'Saturn Spark Retard Increase', description: 'Saturn Spark Retard Increase for GM vehicles.', manufacturer: 'GM');
-GmSaturnThrottlePositionDecreaseFunction() : super(name: 'Saturn Throttle Position Decrease', description: 'Saturn Throttle Position Decrease for GM vehicles.', manufacturer: 'GM');
-GmSaturnThrottlePositionIncreaseFunction() : super(name: 'Saturn Throttle Position Increase', description: 'Saturn Throttle Position Increase for GM vehicles.', manufacturer: 'GM');
-GmThrottleResetFunction() : super(name: 'Throttle Reset', description: 'Throttle Reset for GM vehicles.', manufacturer: 'GM');
-GmTransmissionPressureFunction() : super(name: 'Transmission Pressure', description: 'Transmission Pressure for GM vehicles.', manufacturer: 'GM');
-GmTransmissionValuesFunction() : super(name: 'Transmission Values', description: 'Transmission Values for GM vehicles.', manufacturer: 'GM');
-GmCadillacCadillacBrakePedalPositionSensorLearnFunction
-GmCadillacEngineOilPressureValveOffFunction
-GmCadillacEngineOilPressureValveOnFunction
-GmCadillacEngineOilPressureValveReleaseFunction
-GmCadillacEvapServiceBayTestFunction
-GmCadillacFuelRailPressureReliefValveLearnFunction
-GmCadillacGeneratorTerminalOffFunction
-GmCadillacGeneratorTerminalOnFunction
-GmCadillacGeneratorTerminalReleaseFunction
-GmCadillacHeatedO2SensorHeaterLearnFunction
-GmCadillacIdleLearnFunction
-GmCadillacIgnitionTimingOnFunction
-GmCadillacIgnitionTimingReleaseFunction
-GmCadillacMilLampOffFunction
-GmCadillacMilLampOnFunction
-GmCadillacMilLampReleaseFunction
-GmCadillacRemoteVehicleStartDisableHistoryResetFunction
-GmCadillacStarterRelayOffFunction
-GmCadillacStarterRelayOnFunction
-GmCadillacStarterRelayReleaseFunction
-GmCadillacSuperchargerBypassSolenoidValveDecreaseFunction
-GmCadillacSuperchargerBypassSolenoidValveIncreaseFunction
-GmCadillacSuperchargerBypassSolenoidValveReleaseFunction
-GmInjCodeFunction
-GmInjReadFunction
-GmSaturnAcRelayOffFunction
-GmSaturnAcRelayOnFunction
-GmSaturnCoolingFanRelayOffFunction
-GmSaturnCoolingFanRelayOnFunction
-GmSaturnIdleSparkDecreaseFunction
-GmSaturnIdleSparkIncreaseFunction
-GmSaturnRvsDisplayHistoryResetFunction
-GmSaturnSparkRetardDecreaseFunction
-GmSaturnSparkRetardIncreaseFunction
-GmSaturnThrottlePositionDecreaseFunction
-GmSaturnThrottlePositionIncreaseFunction
-GmThrottleResetFunction
-GmTransmissionPressureFunction
-GmTransmissionValuesFunction
+    const GmCadillacCadillacBrakePedalPositionSensorLearnFunction(),
+    const GmCadillacEngineOilPressureValveOffFunction(),
+    const GmCadillacEngineOilPressureValveOnFunction(),
+    const GmCadillacEngineOilPressureValveReleaseFunction(),
+    const GmCadillacEvapServiceBayTestFunction(),
+    const GmCadillacFuelRailPressureReliefValveLearnFunction(),
+    const GmCadillacGeneratorTerminalOffFunction(),
+    const GmCadillacGeneratorTerminalOnFunction(),
+    const GmCadillacGeneratorTerminalReleaseFunction(),
+    const GmCadillacHeatedO2SensorHeaterLearnFunction(),
+    const GmCadillacIdleLearnFunction(),
+    const GmCadillacIgnitionTimingOnFunction(),
+    const GmCadillacIgnitionTimingReleaseFunction(),
+    const GmCadillacMilLampOffFunction(),
+    const GmCadillacMilLampOnFunction(),
+    const GmCadillacMilLampReleaseFunction(),
+    const GmCadillacRemoteVehicleStartDisableHistoryResetFunction(),
+    const GmCadillacStarterRelayOffFunction(),
+    const GmCadillacStarterRelayOnFunction(),
+    const GmCadillacStarterRelayReleaseFunction(),
+    const GmCadillacSuperchargerBypassSolenoidValveDecreaseFunction(),
+    const GmCadillacSuperchargerBypassSolenoidValveIncreaseFunction(),
+    const GmCadillacSuperchargerBypassSolenoidValveReleaseFunction(),
+    const GmInjCodeFunction(),
+    const GmInjReadFunction(),
+    const GmSaturnAcRelayOffFunction(),
+    const GmSaturnAcRelayOnFunction(),
+    const GmSaturnCoolingFanRelayOffFunction(),
+    const GmSaturnCoolingFanRelayOnFunction(),
+    const GmSaturnIdleSparkDecreaseFunction(),
+    const GmSaturnIdleSparkIncreaseFunction(),
+    const GmSaturnRvsDisplayHistoryResetFunction(),
+    const GmSaturnSparkRetardDecreaseFunction(),
+    const GmSaturnSparkRetardIncreaseFunction(),
+    const GmSaturnThrottlePositionDecreaseFunction(),
+    const GmSaturnThrottlePositionIncreaseFunction(),
+    const GmThrottleResetFunction(),
+    const GmTransmissionPressureFunction(),
+    const GmTransmissionValuesFunction(),
   ];
 
   static List<SpecialFunction> getAvailableFunctions() {

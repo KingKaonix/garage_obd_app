@@ -57,7 +57,7 @@ class ObdCommands {
     parser: (raw) => _parseCoolant(raw), // Same as coolant formula
   );
   static const SHORT_TERM_FUEL_TRIM_B1 = ObdCommand(
-    mode: '01', pid: '1//16', description: 'Short Term Fuel Trim (B1)', unit: '%',
+    mode: '01', pid: '06', description: 'Short Term Fuel Trim (B1)', unit: '%',
     parser: (raw) => _parseFuelTrim(raw),
   );
   static const SHORT_TERM_FUEL_TRIM_B2 = ObdCommand(

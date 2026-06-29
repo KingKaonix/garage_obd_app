@@ -110,5 +110,5 @@ jobs:
           body: |
             ## Garage OBD App - Build ${{ github.run_id }}
             Automated build from main branch.
-          files: artifacts/*
+          files: artifacts/**/*
           fail_on_unmatched_files: false

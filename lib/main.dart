@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'obd2/elm327_adapter.dart';
 import 'obd2/obd_commands.dart';
@@ -46,7 +47,36 @@ class _DeviceScanScreenState extends State<DeviceScanScreen> {
     _startScan(); // Start scanning automatically when screen opens
   }
 
+  Future<bool> _requestPermissions() async {
+    if (await Permission.bluetoothScan.isGranted && 
+        await Permission.bluetoothConnect.isGranted) {
+      return true;
+    }
+    
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.locationWhenInUse,
+    ].request();
+    
+    return statuses.values.every((s) => s.isGranted);
+  }
+
   void _startScan() async {
+    // Request permissions first
+    bool granted = await _requestPermissions();
+    if (!granted) {
+      setState(() {
+        _isScanning = false;
+        _connectionStatus = 'Bluetooth permissions denied';
+      });
+      _showSnackbar(
+        'Bluetooth permissions are required to scan for OBD-II devices',
+        Colors.red,
+      );
+      return;
+    }
+
     setState(() {
       _scanResults = [];
       _isScanning = true;

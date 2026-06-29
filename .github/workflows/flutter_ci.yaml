@@ -27,6 +27,11 @@ jobs:
       - name: Get Flutter dependencies
         run: flutter pub get
 
+      - name: Accept Android SDK licenses and install tools
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "cmdline-tools;latest" "platforms;android-34"
+
       - name: Build Android APK
         run: flutter build apk --release
 

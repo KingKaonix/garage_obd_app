@@ -24,20 +24,19 @@ jobs:
           flutter-version: '3.27.4'
           channel: 'stable'
           cache: true
+      - run: yes | flutter doctor --android-licenses || true
       - run: |
-          flutter --version
-          yes | flutter doctor --android-licenses || true
-      - name: Pub get verbose
-        continue-on-error: true
-        run: flutter pub get --verbose 2>&1
-      - name: Build
-        continue-on-error: true
-        run: flutter build apk --debug 2>&1
-      - name: Upload
-        if: always()
-        uses: actions/upload-artifact@v4
+          flutter pub get
+          flutter build apk --debug
+      - name: Collect APK
+        run: |
+          mkdir -p /tmp/out
+          find . -name "*.apk" -exec cp {} /tmp/out/ \;
+          find / -name "*.apk" -exec cp {} /tmp/out/ \; 2>/dev/null || true
+          ls -la /tmp/out/
+      - uses: actions/upload-artifact@v4
         with:
-          name: outputs
-          path: '**/*.apk'
+          name: apk
+          path: /tmp/out/
           retention-days: 90
-          if-no-files-found: ignore
+          if-no-files-found: error

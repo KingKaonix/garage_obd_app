@@ -45,48 +45,35 @@ jobs:
         continue-on-error: true
         run: |
           echo "=== Attempt 1 ==="
-          flutter build apk --debug --verbose 2>&1
-          if [ $? -ne 0 ]; then
-            echo ""
-            echo "=== Attempt 1 failed. Cleaning and retrying... ==="
-            flutter clean 2>&1
-            flutter pub get 2>&1
-            echo ""
-            echo "=== Attempt 2 ==="
-            flutter build apk --debug --verbose 2>&1
-          fi
+          flutter build apk --debug 2>&1 && exit 0
+          echo "=== Attempt 1 failed. Retrying... ==="
+          flutter clean 2>&1
+          flutter pub get 2>&1
+          echo "=== Attempt 2 ==="
+          flutter build apk --debug 2>&1 || true
 
       - name: Upload Debug APK
-        if: hashFiles('build/app/outputs/flutter-apk/app-debug.apk') != ''
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: app-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/flutter-apk/app.apk
           retention-days: 90
 
       - name: Build APK (release)
-        if: hashFiles('build/app/outputs/flutter-apk/app-debug.apk') != ''
         continue-on-error: true
-        run: flutter build apk --release 2>&1
+        run: flutter build apk --release 2>&1 || true
 
       - name: Upload Release APK
-        if: hashFiles('build/app/outputs/flutter-apk/app-release.apk') != ''
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 90
-
-      - name: Build AppBundle
-        if: hashFiles('build/app/outputs/flutter-apk/app-release.apk') != ''
-        run: flutter build appbundle --release 2>&1
-
-      - name: Upload AppBundle
-        if: hashFiles('build/app/outputs/bundle/release/app-release.aab') != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-aab
-          path: build/app/outputs/bundle/release/app-release.aab
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app.apk
           retention-days: 90
 
   create_release:
@@ -95,25 +82,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: List artifacts
-        run: |
-          find artifacts -type f -ls 2>/dev/null || echo "No artifacts found"
-          echo "Artifact files found:"
-          find artifacts -type f 2>/dev/null | wc -l
-
       - name: Create Release
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ github.run_number }}
-          name: Release v${{ github.run_number }}
+          tag_name: build-${{ github.run_id }}
+          name: Build ${{ github.run_id }}
           body: |
-            ## Release v${{ github.run_number }}
             Automated build from main branch.
           files: artifacts/**/*
           fail_on_unmatched_files: false

@@ -150,6 +150,18 @@ jobs:
             if [ -d "$dir" ]; then
               echo "── Analyzing $dir/ ──"
               dart analyze "$dir/" 2>&1
+              EXIT_CODE=$?
+              if [ $EXIT_CODE -gt 2 ]; then
+                echo "❌ Analysis failed with exit code $EXIT_CODE"
+                exit $EXIT_CODE
+              fi
+              echo "✅ Analysis passed (warnings only)"
+              echo ""
+            fi
+          done
+            if [ -d "$dir" ]; then
+              echo "── Analyzing $dir/ ──"
+              dart analyze "$dir/" 2>&1
               echo "Exit code: $?"
               echo ""
             fi

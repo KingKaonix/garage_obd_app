@@ -259,10 +259,15 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
   Future<void> _init() async {
     try {
       await _checkPermissions();
-      await _checkBluetooth();
+      if (_allGranted) {
+        await _checkBluetooth();
+      }
     } catch (e) {
       if (mounted) {
-        setState(() => _statusText = 'Init error: $e');
+        setState(() {
+          _statusText = 'Init error: $e';
+          _isScanning = false;
+        });
       }
     }
   }
@@ -275,20 +280,21 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
 
   // ── Permissions ──
   Future<void> _checkPermissions() async {
-    final connectStatus = await Permission.bluetoothConnect.status;
-    final locationStatus = await Permission.locationWhenInUse.status;
-    final scanStatus = await Permission.bluetoothScan.status;
-
-    setState(() {
-      _connectPerm = _toPerm(connectStatus);
-      _locationPerm = _toPerm(locationStatus);
-      _scanPerm = _toPerm(scanStatus);
-    });
-
     final toRequest = <Permission>[];
+
+    final connectStatus = await Permission.bluetoothConnect.status;
+    _connectPerm = _toPerm(connectStatus);
     if (connectStatus.isDenied) toRequest.add(Permission.bluetoothConnect);
-    if (locationStatus.isDenied) toRequest.add(Permission.locationWhenInUse);
+
+    final scanStatus = await Permission.bluetoothScan.status;
+    _scanPerm = _toPerm(scanStatus);
     if (scanStatus.isDenied) toRequest.add(Permission.bluetoothScan);
+
+    final locationStatus = await Permission.locationWhenInUse.status;
+    _locationPerm = _toPerm(locationStatus);
+    if (locationStatus.isDenied) toRequest.add(Permission.locationWhenInUse);
+
+    setState(() {});
 
     if (toRequest.isNotEmpty) {
       final statuses = await toRequest.request();
@@ -297,11 +303,11 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
           if (statuses.containsKey(Permission.bluetoothConnect)) {
             _connectPerm = _toPerm(statuses[Permission.bluetoothConnect]!);
           }
-          if (statuses.containsKey(Permission.locationWhenInUse)) {
-            _locationPerm = _toPerm(statuses[Permission.locationWhenInUse]!);
-          }
           if (statuses.containsKey(Permission.bluetoothScan)) {
             _scanPerm = _toPerm(statuses[Permission.bluetoothScan]!);
+          }
+          if (statuses.containsKey(Permission.locationWhenInUse)) {
+            _locationPerm = _toPerm(statuses[Permission.locationWhenInUse]!);
           }
         });
       }

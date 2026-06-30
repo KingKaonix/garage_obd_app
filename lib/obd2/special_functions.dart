@@ -74,12 +74,12 @@ class DummyObdCommand {
 
 // --- Generated GM Special Functions ---
 
-class GmCadillacCadillacBrakePedalPositionSensorLearnFunction extends SpecialFunction {
-  const GmCadillacCadillacBrakePedalPositionSensorLearnFunction() : super(name: 'Cadillac Cadillac Brake Pedal Position Sensor Learn', description: 'Cadillac Cadillac Brake Pedal Position Sensor Learn for GM vehicles.', manufacturer: 'GM');
+class GmBrakePedalPositionSensorLearnFunction extends SpecialFunction {
+  const GmBrakePedalPositionSensorLearnFunction() : super(name: 'Brake Pedal Position Sensor Learn', description: 'Brake Pedal Position Sensor Learn for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Cadillac Brake Pedal Position Sensor Learn...';
+    statusNotifier.value = 'Starting Brake Pedal Position Sensor Learn...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '03 22 11 24', '07 AE 20 00 00 00 00 02', 'AT CAF 1'];
       for (String command in commands) {
@@ -87,20 +87,20 @@ class GmCadillacCadillacBrakePedalPositionSensorLearnFunction extends SpecialFun
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Cadillac Brake Pedal Position Sensor Learn completed.';
+      return 'Brake Pedal Position Sensor Learn completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Cadillac Brake Pedal Position Sensor Learn Failed: $e';
+      statusNotifier.value = 'Brake Pedal Position Sensor Learn Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacEngineOilPressureValveOffFunction extends SpecialFunction {
-  const GmCadillacEngineOilPressureValveOffFunction() : super(name: 'Cadillac Engine Oil Pressure Valve Off', description: 'Cadillac Engine Oil Pressure Valve Off for GM vehicles.', manufacturer: 'GM');
+class GmEngineOilPressureValveOffFunction extends SpecialFunction {
+  const GmEngineOilPressureValveOffFunction() : super(name: 'Engine Oil Pressure Valve Off', description: 'Engine Oil Pressure Valve Off for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Engine Oil Pressure Valve Off...';
+    statusNotifier.value = 'Starting Engine Oil Pressure Valve Off...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 10 00 02 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -108,20 +108,20 @@ class GmCadillacEngineOilPressureValveOffFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Engine Oil Pressure Valve Off completed.';
+      return 'Engine Oil Pressure Valve Off completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Engine Oil Pressure Valve Off Failed: $e';
+      statusNotifier.value = 'Engine Oil Pressure Valve Off Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacEngineOilPressureValveOnFunction extends SpecialFunction {
-  const GmCadillacEngineOilPressureValveOnFunction() : super(name: 'Cadillac Engine Oil Pressure Valve On', description: 'Cadillac Engine Oil Pressure Valve On for GM vehicles.', manufacturer: 'GM');
+class GmEngineOilPressureValveOnFunction extends SpecialFunction {
+  const GmEngineOilPressureValveOnFunction() : super(name: 'Engine Oil Pressure Valve On', description: 'Engine Oil Pressure Valve On for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Engine Oil Pressure Valve On...';
+    statusNotifier.value = 'Starting Engine Oil Pressure Valve On...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 10 00 03 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -129,20 +129,20 @@ class GmCadillacEngineOilPressureValveOnFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Engine Oil Pressure Valve On completed.';
+      return 'Engine Oil Pressure Valve On completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Engine Oil Pressure Valve On Failed: $e';
+      statusNotifier.value = 'Engine Oil Pressure Valve On Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacEngineOilPressureValveReleaseFunction extends SpecialFunction {
-  const GmCadillacEngineOilPressureValveReleaseFunction() : super(name: 'Cadillac Engine Oil Pressure Valve Release', description: 'Cadillac Engine Oil Pressure Valve Release for GM vehicles.', manufacturer: 'GM');
+class GmEngineOilPressureValveReleaseFunction extends SpecialFunction {
+  const GmEngineOilPressureValveReleaseFunction() : super(name: 'Engine Oil Pressure Valve Release', description: 'Engine Oil Pressure Valve Release for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Engine Oil Pressure Valve Release...';
+    statusNotifier.value = 'Starting Engine Oil Pressure Valve Release...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '02 AE 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -150,20 +150,20 @@ class GmCadillacEngineOilPressureValveReleaseFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Engine Oil Pressure Valve Release completed.';
+      return 'Engine Oil Pressure Valve Release completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Engine Oil Pressure Valve Release Failed: $e';
+      statusNotifier.value = 'Engine Oil Pressure Valve Release Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacEvapServiceBayTestFunction extends SpecialFunction {
-  const GmCadillacEvapServiceBayTestFunction() : super(name: 'Cadillac Evap Service Bay Test', description: 'Cadillac Evap Service Bay Test for GM vehicles.', manufacturer: 'GM');
+class GmEvapServiceBayTestFunction extends SpecialFunction {
+  const GmEvapServiceBayTestFunction() : super(name: 'EVAP Service Bay Test', description: 'EVAP Service Bay Test for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Evap Service Bay Test...';
+    statusNotifier.value = 'Starting EVAP Service Bay Test...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '03 22 20 66', '07 AE 18 00 00 40 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -171,20 +171,20 @@ class GmCadillacEvapServiceBayTestFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Evap Service Bay Test completed.';
+      return 'EVAP Service Bay Test completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Evap Service Bay Test Failed: $e';
+      statusNotifier.value = 'EVAP Service Bay Test Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacFuelRailPressureReliefValveLearnFunction extends SpecialFunction {
-  const GmCadillacFuelRailPressureReliefValveLearnFunction() : super(name: 'Cadillac Fuel Rail Pressure Relief Valve Learn', description: 'Cadillac Fuel Rail Pressure Relief Valve Learn for GM vehicles.', manufacturer: 'GM');
+class GmFuelRailPressureReliefValveLearnFunction extends SpecialFunction {
+  const GmFuelRailPressureReliefValveLearnFunction() : super(name: 'Fuel Rail Pressure Relief Valve Learn', description: 'Fuel Rail Pressure Relief Valve Learn for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Fuel Rail Pressure Relief Valve Learn...';
+    statusNotifier.value = 'Starting Fuel Rail Pressure Relief Valve Learn...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 1A 04 00 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -192,20 +192,20 @@ class GmCadillacFuelRailPressureReliefValveLearnFunction extends SpecialFunction
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Fuel Rail Pressure Relief Valve Learn completed.';
+      return 'Fuel Rail Pressure Relief Valve Learn completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Fuel Rail Pressure Relief Valve Learn Failed: $e';
+      statusNotifier.value = 'Fuel Rail Pressure Relief Valve Learn Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacGeneratorTerminalOffFunction extends SpecialFunction {
-  const GmCadillacGeneratorTerminalOffFunction() : super(name: 'Cadillac Generator Terminal Off', description: 'Cadillac Generator Terminal Off for GM vehicles.', manufacturer: 'GM');
+class GmGeneratorTerminalOffFunction extends SpecialFunction {
+  const GmGeneratorTerminalOffFunction() : super(name: 'Generator Terminal Off', description: 'Generator Terminal Off for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Generator Terminal Off...';
+    statusNotifier.value = 'Starting Generator Terminal Off...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 20 08 00 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -213,20 +213,20 @@ class GmCadillacGeneratorTerminalOffFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Generator Terminal Off completed.';
+      return 'Generator Terminal Off completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Generator Terminal Off Failed: $e';
+      statusNotifier.value = 'Generator Terminal Off Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacGeneratorTerminalOnFunction extends SpecialFunction {
-  const GmCadillacGeneratorTerminalOnFunction() : super(name: 'Cadillac Generator Terminal On', description: 'Cadillac Generator Terminal On for GM vehicles.', manufacturer: 'GM');
+class GmGeneratorTerminalOnFunction extends SpecialFunction {
+  const GmGeneratorTerminalOnFunction() : super(name: 'Generator Terminal On', description: 'Generator Terminal On for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Generator Terminal On...';
+    statusNotifier.value = 'Starting Generator Terminal On...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 20 0C 00 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -234,20 +234,20 @@ class GmCadillacGeneratorTerminalOnFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Generator Terminal On completed.';
+      return 'Generator Terminal On completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Generator Terminal On Failed: $e';
+      statusNotifier.value = 'Generator Terminal On Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacGeneratorTerminalReleaseFunction extends SpecialFunction {
-  const GmCadillacGeneratorTerminalReleaseFunction() : super(name: 'Cadillac Generator Terminal Release', description: 'Cadillac Generator Terminal Release for GM vehicles.', manufacturer: 'GM');
+class GmGeneratorTerminalReleaseFunction extends SpecialFunction {
+  const GmGeneratorTerminalReleaseFunction() : super(name: 'Generator Terminal Release', description: 'Generator Terminal Release for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Generator Terminal Release...';
+    statusNotifier.value = 'Starting Generator Terminal Release...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '02 AE 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -255,20 +255,20 @@ class GmCadillacGeneratorTerminalReleaseFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Generator Terminal Release completed.';
+      return 'Generator Terminal Release completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Generator Terminal Release Failed: $e';
+      statusNotifier.value = 'Generator Terminal Release Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacHeatedO2SensorHeaterLearnFunction extends SpecialFunction {
-  const GmCadillacHeatedO2SensorHeaterLearnFunction() : super(name: 'Cadillac Heated O2 Sensor Heater Learn', description: 'Cadillac Heated O2 Sensor Heater Learn for GM vehicles.', manufacturer: 'GM');
+class GmHeatedO2SensorHeaterLearnFunction extends SpecialFunction {
+  const GmHeatedO2SensorHeaterLearnFunction() : super(name: 'Heated O2 Sensor Heater Learn', description: 'Heated O2 Sensor Heater Learn for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Heated O2 Sensor Heater Learn...';
+    statusNotifier.value = 'Starting Heated O2 Sensor Heater Learn...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '03 22 00 03', '07 AE 1E 08 00 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -276,20 +276,20 @@ class GmCadillacHeatedO2SensorHeaterLearnFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Heated O2 Sensor Heater Learn completed.';
+      return 'Heated O2 Sensor Heater Learn completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Heated O2 Sensor Heater Learn Failed: $e';
+      statusNotifier.value = 'Heated O2 Sensor Heater Learn Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacIdleLearnFunction extends SpecialFunction {
-  const GmCadillacIdleLearnFunction() : super(name: 'Cadillac Idle Learn', description: 'Cadillac Idle Learn for GM vehicles.', manufacturer: 'GM');
+class GmIdleLearnFunction extends SpecialFunction {
+  const GmIdleLearnFunction() : super(name: 'Idle Learn', description: 'Idle Learn for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Idle Learn...';
+    statusNotifier.value = 'Starting Idle Learn...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '03 22 20 66', '07 AE 14 10 00 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -297,20 +297,20 @@ class GmCadillacIdleLearnFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Idle Learn completed.';
+      return 'Idle Learn completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Idle Learn Failed: $e';
+      statusNotifier.value = 'Idle Learn Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacIgnitionTimingOnFunction extends SpecialFunction {
-  const GmCadillacIgnitionTimingOnFunction() : super(name: 'Cadillac Ignition Timing On', description: 'Cadillac Ignition Timing On for GM vehicles.', manufacturer: 'GM');
+class GmIgnitionTimingOnFunction extends SpecialFunction {
+  const GmIgnitionTimingOnFunction() : super(name: 'Ignition Timing On', description: 'Ignition Timing On for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Ignition Timing On...';
+    statusNotifier.value = 'Starting Ignition Timing On...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 10 20 00 02 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -318,20 +318,20 @@ class GmCadillacIgnitionTimingOnFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Ignition Timing On completed.';
+      return 'Ignition Timing On completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Ignition Timing On Failed: $e';
+      statusNotifier.value = 'Ignition Timing On Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacIgnitionTimingReleaseFunction extends SpecialFunction {
-  const GmCadillacIgnitionTimingReleaseFunction() : super(name: 'Cadillac Ignition Timing Release', description: 'Cadillac Ignition Timing Release for GM vehicles.', manufacturer: 'GM');
+class GmIgnitionTimingReleaseFunction extends SpecialFunction {
+  const GmIgnitionTimingReleaseFunction() : super(name: 'Ignition Timing Release', description: 'Ignition Timing Release for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Ignition Timing Release...';
+    statusNotifier.value = 'Starting Ignition Timing Release...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '02 AE 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -339,20 +339,20 @@ class GmCadillacIgnitionTimingReleaseFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Ignition Timing Release completed.';
+      return 'Ignition Timing Release completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Ignition Timing Release Failed: $e';
+      statusNotifier.value = 'Ignition Timing Release Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacMilLampOffFunction extends SpecialFunction {
-  const GmCadillacMilLampOffFunction() : super(name: 'Cadillac Mil Lamp Off', description: 'Cadillac Mil Lamp Off for GM vehicles.', manufacturer: 'GM');
+class GmMilLampOffFunction extends SpecialFunction {
+  const GmMilLampOffFunction() : super(name: 'MIL Lamp Off', description: 'MIL Lamp Off for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Mil Lamp Off...';
+    statusNotifier.value = 'Starting MIL Lamp Off...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 20 80 00 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -360,20 +360,20 @@ class GmCadillacMilLampOffFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Mil Lamp Off completed.';
+      return 'MIL Lamp Off completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Mil Lamp Off Failed: $e';
+      statusNotifier.value = 'MIL Lamp Off Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacMilLampOnFunction extends SpecialFunction {
-  const GmCadillacMilLampOnFunction() : super(name: 'Cadillac Mil Lamp On', description: 'Cadillac Mil Lamp On for GM vehicles.', manufacturer: 'GM');
+class GmMilLampOnFunction extends SpecialFunction {
+  const GmMilLampOnFunction() : super(name: 'MIL Lamp On', description: 'MIL Lamp On for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Mil Lamp On...';
+    statusNotifier.value = 'Starting MIL Lamp On...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 20 C0 00 00 00 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -381,20 +381,20 @@ class GmCadillacMilLampOnFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Mil Lamp On completed.';
+      return 'MIL Lamp On completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Mil Lamp On Failed: $e';
+      statusNotifier.value = 'MIL Lamp On Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacMilLampReleaseFunction extends SpecialFunction {
-  const GmCadillacMilLampReleaseFunction() : super(name: 'Cadillac Mil Lamp Release', description: 'Cadillac Mil Lamp Release for GM vehicles.', manufacturer: 'GM');
+class GmMilLampReleaseFunction extends SpecialFunction {
+  const GmMilLampReleaseFunction() : super(name: 'MIL Lamp Release', description: 'MIL Lamp Release for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Mil Lamp Release...';
+    statusNotifier.value = 'Starting MIL Lamp Release...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '02 AE 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -402,20 +402,20 @@ class GmCadillacMilLampReleaseFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Mil Lamp Release completed.';
+      return 'MIL Lamp Release completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Mil Lamp Release Failed: $e';
+      statusNotifier.value = 'MIL Lamp Release Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacRemoteVehicleStartDisableHistoryResetFunction extends SpecialFunction {
-  const GmCadillacRemoteVehicleStartDisableHistoryResetFunction() : super(name: 'Cadillac Remote Vehicle Start Disable History Reset', description: 'Cadillac Remote Vehicle Start Disable History Reset for GM vehicles.', manufacturer: 'GM');
+class GmRemoteVehicleStartDisableHistoryResetFunction extends SpecialFunction {
+  const GmRemoteVehicleStartDisableHistoryResetFunction() : super(name: 'Remote Start Disable History Reset', description: 'Remote Start Disable History Reset for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Remote Vehicle Start Disable History Reset...';
+    statusNotifier.value = 'Starting Remote Start Disable History Reset...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 20 00 00 00 01 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -423,20 +423,20 @@ class GmCadillacRemoteVehicleStartDisableHistoryResetFunction extends SpecialFun
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Remote Vehicle Start Disable History Reset completed.';
+      return 'Remote Start Disable History Reset completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Remote Vehicle Start Disable History Reset Failed: $e';
+      statusNotifier.value = 'Remote Start Disable History Reset Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacStarterRelayOffFunction extends SpecialFunction {
-  const GmCadillacStarterRelayOffFunction() : super(name: 'Cadillac Starter Relay Off', description: 'Cadillac Starter Relay Off for GM vehicles.', manufacturer: 'GM');
+class GmStarterRelayOffFunction extends SpecialFunction {
+  const GmStarterRelayOffFunction() : super(name: 'Starter Relay Off', description: 'Starter Relay Off for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Starter Relay Off...';
+    statusNotifier.value = 'Starting Starter Relay Off...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 20 00 00 00 08 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -444,20 +444,20 @@ class GmCadillacStarterRelayOffFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Starter Relay Off completed.';
+      return 'Starter Relay Off completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Starter Relay Off Failed: $e';
+      statusNotifier.value = 'Starter Relay Off Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacStarterRelayOnFunction extends SpecialFunction {
-  const GmCadillacStarterRelayOnFunction() : super(name: 'Cadillac Starter Relay On', description: 'Cadillac Starter Relay On for GM vehicles.', manufacturer: 'GM');
+class GmStarterRelayOnFunction extends SpecialFunction {
+  const GmStarterRelayOnFunction() : super(name: 'Starter Relay On', description: 'Starter Relay On for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Starter Relay On...';
+    statusNotifier.value = 'Starting Starter Relay On...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 20 00 00 00 0C 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -465,20 +465,20 @@ class GmCadillacStarterRelayOnFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Starter Relay On completed.';
+      return 'Starter Relay On completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Starter Relay On Failed: $e';
+      statusNotifier.value = 'Starter Relay On Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacStarterRelayReleaseFunction extends SpecialFunction {
-  const GmCadillacStarterRelayReleaseFunction() : super(name: 'Cadillac Starter Relay Release', description: 'Cadillac Starter Relay Release for GM vehicles.', manufacturer: 'GM');
+class GmStarterRelayReleaseFunction extends SpecialFunction {
+  const GmStarterRelayReleaseFunction() : super(name: 'Starter Relay Release', description: 'Starter Relay Release for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Starter Relay Release...';
+    statusNotifier.value = 'Starting Starter Relay Release...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '02 AE 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -486,20 +486,20 @@ class GmCadillacStarterRelayReleaseFunction extends SpecialFunction {
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Starter Relay Release completed.';
+      return 'Starter Relay Release completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Starter Relay Release Failed: $e';
+      statusNotifier.value = 'Starter Relay Release Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacSuperchargerBypassSolenoidValveDecreaseFunction extends SpecialFunction {
-  const GmCadillacSuperchargerBypassSolenoidValveDecreaseFunction() : super(name: 'Cadillac Supercharger Bypass Solenoid Valve Decrease', description: 'Cadillac Supercharger Bypass Solenoid Valve Decrease for GM vehicles.', manufacturer: 'GM');
+class GmSuperchargerBypassSolenoidValveDecreaseFunction extends SpecialFunction {
+  const GmSuperchargerBypassSolenoidValveDecreaseFunction() : super(name: 'Supercharger Bypass Solenoid Valve Decrease', description: 'Supercharger Bypass Solenoid Valve Decrease for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Supercharger Bypass Solenoid Valve Decrease...';
+    statusNotifier.value = 'Starting Supercharger Bypass Solenoid Valve Decrease...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 14 00 00 00 80 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -507,20 +507,20 @@ class GmCadillacSuperchargerBypassSolenoidValveDecreaseFunction extends SpecialF
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Supercharger Bypass Solenoid Valve Decrease completed.';
+      return 'Supercharger Bypass Solenoid Valve Decrease completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Supercharger Bypass Solenoid Valve Decrease Failed: $e';
+      statusNotifier.value = 'Supercharger Bypass Solenoid Valve Decrease Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacSuperchargerBypassSolenoidValveIncreaseFunction extends SpecialFunction {
-  const GmCadillacSuperchargerBypassSolenoidValveIncreaseFunction() : super(name: 'Cadillac Supercharger Bypass Solenoid Valve Increase', description: 'Cadillac Supercharger Bypass Solenoid Valve Increase for GM vehicles.', manufacturer: 'GM');
+class GmSuperchargerBypassSolenoidValveIncreaseFunction extends SpecialFunction {
+  const GmSuperchargerBypassSolenoidValveIncreaseFunction() : super(name: 'Supercharger Bypass Solenoid Valve Increase', description: 'Supercharger Bypass Solenoid Valve Increase for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Supercharger Bypass Solenoid Valve Increase...';
+    statusNotifier.value = 'Starting Supercharger Bypass Solenoid Valve Increase...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '07 AE 14 00 00 00 80 19', 'AT CAF 1'];
       for (String command in commands) {
@@ -528,20 +528,20 @@ class GmCadillacSuperchargerBypassSolenoidValveIncreaseFunction extends SpecialF
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Supercharger Bypass Solenoid Valve Increase completed.';
+      return 'Supercharger Bypass Solenoid Valve Increase completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Supercharger Bypass Solenoid Valve Increase Failed: $e';
+      statusNotifier.value = 'Supercharger Bypass Solenoid Valve Increase Failed: $e';
       return 'Failed: $e';
     }
   }
 }
 
-class GmCadillacSuperchargerBypassSolenoidValveReleaseFunction extends SpecialFunction {
-  const GmCadillacSuperchargerBypassSolenoidValveReleaseFunction() : super(name: 'Cadillac Supercharger Bypass Solenoid Valve Release', description: 'Cadillac Supercharger Bypass Solenoid Valve Release for GM vehicles.', manufacturer: 'GM');
+class GmSuperchargerBypassSolenoidValveReleaseFunction extends SpecialFunction {
+  const GmSuperchargerBypassSolenoidValveReleaseFunction() : super(name: 'Supercharger Bypass Solenoid Valve Release', description: 'Supercharger Bypass Solenoid Valve Release for GM vehicles.', manufacturer: 'GM');
 
   @override
   Future<String> execute(Elm327Adapter adapter, ValueNotifier<String> statusNotifier) async {
-    statusNotifier.value = 'Starting Cadillac Supercharger Bypass Solenoid Valve Release...';
+    statusNotifier.value = 'Starting Supercharger Bypass Solenoid Valve Release...';
     try {
       List<String> commands = ['AT Z', 'AT H1', 'AT L1', 'AT S0', 'AT SP 6', 'AT AL', 'AT CAF 0', 'AT SH 7E0', 'AT CRA 5E8', 'AT FC SH 7E0', 'AT FC SD 30', 'AT FC SM 1', '01 3E', '02 AE 00', 'AT CAF 1'];
       for (String command in commands) {
@@ -549,9 +549,9 @@ class GmCadillacSuperchargerBypassSolenoidValveReleaseFunction extends SpecialFu
         await adapter.sendCommand(command);
         await Future.delayed(Duration(milliseconds: 50));
       }
-      return 'Cadillac Supercharger Bypass Solenoid Valve Release completed.';
+      return 'Supercharger Bypass Solenoid Valve Release completed.';
     } catch (e) {
-      statusNotifier.value = 'Cadillac Supercharger Bypass Solenoid Valve Release Failed: $e';
+      statusNotifier.value = 'Supercharger Bypass Solenoid Valve Release Failed: $e';
       return 'Failed: $e';
     }
   }
@@ -899,29 +899,29 @@ class GmTransmissionValuesFunction extends SpecialFunction {
 class SpecialFunctionsManager {
   static final List<SpecialFunction> _availableFunctions = [
     const OilLifeResetFunction(),
-    const GmCadillacCadillacBrakePedalPositionSensorLearnFunction(),
-    const GmCadillacEngineOilPressureValveOffFunction(),
-    const GmCadillacEngineOilPressureValveOnFunction(),
-    const GmCadillacEngineOilPressureValveReleaseFunction(),
-    const GmCadillacEvapServiceBayTestFunction(),
-    const GmCadillacFuelRailPressureReliefValveLearnFunction(),
-    const GmCadillacGeneratorTerminalOffFunction(),
-    const GmCadillacGeneratorTerminalOnFunction(),
-    const GmCadillacGeneratorTerminalReleaseFunction(),
-    const GmCadillacHeatedO2SensorHeaterLearnFunction(),
-    const GmCadillacIdleLearnFunction(),
-    const GmCadillacIgnitionTimingOnFunction(),
-    const GmCadillacIgnitionTimingReleaseFunction(),
-    const GmCadillacMilLampOffFunction(),
-    const GmCadillacMilLampOnFunction(),
-    const GmCadillacMilLampReleaseFunction(),
-    const GmCadillacRemoteVehicleStartDisableHistoryResetFunction(),
-    const GmCadillacStarterRelayOffFunction(),
-    const GmCadillacStarterRelayOnFunction(),
-    const GmCadillacStarterRelayReleaseFunction(),
-    const GmCadillacSuperchargerBypassSolenoidValveDecreaseFunction(),
-    const GmCadillacSuperchargerBypassSolenoidValveIncreaseFunction(),
-    const GmCadillacSuperchargerBypassSolenoidValveReleaseFunction(),
+    const GmBrakePedalPositionSensorLearnFunction(),
+    const GmEngineOilPressureValveOffFunction(),
+    const GmEngineOilPressureValveOnFunction(),
+    const GmEngineOilPressureValveReleaseFunction(),
+    const GmEvapServiceBayTestFunction(),
+    const GmFuelRailPressureReliefValveLearnFunction(),
+    const GmGeneratorTerminalOffFunction(),
+    const GmGeneratorTerminalOnFunction(),
+    const GmGeneratorTerminalReleaseFunction(),
+    const GmHeatedO2SensorHeaterLearnFunction(),
+    const GmIdleLearnFunction(),
+    const GmIgnitionTimingOnFunction(),
+    const GmIgnitionTimingReleaseFunction(),
+    const GmMilLampOffFunction(),
+    const GmMilLampOnFunction(),
+    const GmMilLampReleaseFunction(),
+    const GmRemoteVehicleStartDisableHistoryResetFunction(),
+    const GmStarterRelayOffFunction(),
+    const GmStarterRelayOnFunction(),
+    const GmStarterRelayReleaseFunction(),
+    const GmSuperchargerBypassSolenoidValveDecreaseFunction(),
+    const GmSuperchargerBypassSolenoidValveIncreaseFunction(),
+    const GmSuperchargerBypassSolenoidValveReleaseFunction(),
     const GmInjCodeFunction(),
     const GmInjReadFunction(),
     const GmSaturnAcRelayOffFunction(),

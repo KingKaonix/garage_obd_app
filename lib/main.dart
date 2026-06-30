@@ -5,6 +5,7 @@ import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'obd2/elm327_adapter.dart';
 import 'obd2/obd_commands.dart';
 import 'screens/live_data_screen.dart';
+import 'screens/special_functions_screen.dart';
 import 'widgets/rpm_gauge.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -177,6 +178,7 @@ class _AppShellState extends State<AppShell> {
           ),
           DashboardShell(elm327: _elm327, isConnected: _isConnected),
           const DtcScreen(),
+          SpecialFunctionsScreen(elm327: _elm327),
           const SettingsScreen(),
         ],
       ),
@@ -198,6 +200,11 @@ class _AppShellState extends State<AppShell> {
             icon: Icon(Icons.error_outline_outlined),
             selectedIcon: Icon(Icons.error_outline),
             label: 'Codes',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.build_outlined),
+            selectedIcon: Icon(Icons.build),
+            label: 'Functions',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),

@@ -139,6 +139,21 @@ jobs:
           echo "--- Outdated Packages ---"
           flutter pub outdated 2>&1 || true
 
+      # ── Patch flutter_bluetooth_serial for AGP 9+ compatibility ──
+      - name: 🔧 Patch flutter_bluetooth_serial (jcenter → mavenCentral)
+        run: |
+          PACKAGE_DIR="$HOME/.pub-cache/hosted/pub.dev/flutter_bluetooth_serial-0.4.0"
+          BUILD_GRADLE="$PACKAGE_DIR/android/build.gradle"
+          if [ -f "$BUILD_GRADLE" ]; then
+            echo "Patching flutter_bluetooth_serial build.gradle..."
+            sed -i 's/jcenter()/mavenCentral()/g' "$BUILD_GRADLE"
+            echo "✅ Patched"
+          else
+            echo "⚠️  Build gradle not found at $BUILD_GRADLE"
+            echo "Searching for flutter_bluetooth_serial..."
+            find "$HOME/.pub-cache/hosted/pub.dev/" -path "*/flutter_bluetooth_serial*/android/build.gradle" 2>/dev/null
+          fi
+
       # ── Static Analysis ──
       - name: 🔍 Static Analysis
         run: |
@@ -253,6 +268,20 @@ jobs:
           echo "--- Lockfile ---"
           if [ -f pubspec.lock ]; then
             grep -E "^\s+name:|^\s+version:" pubspec.lock | paste - - | column -t
+          fi
+
+      # ── Patch flutter_bluetooth_serial for AGP 9+ compatibility ──
+      - name: 🔧 Patch flutter_bluetooth_serial (jcenter → mavenCentral)
+        run: |
+          PACKAGE_DIR="$HOME/.pub-cache/hosted/pub.dev/flutter_bluetooth_serial-0.4.0"
+          BUILD_GRADLE="$PACKAGE_DIR/android/build.gradle"
+          if [ -f "$BUILD_GRADLE" ]; then
+            echo "Patching flutter_bluetooth_serial build.gradle..."
+            sed -i 's/jcenter()/mavenCentral()/g' "$BUILD_GRADLE"
+            echo "✅ Patched"
+          else
+            echo "⚠️  Build gradle not found"
+            find "$HOME/.pub-cache/hosted/pub.dev/" -path "*/flutter_bluetooth_serial*/android/build.gradle" 2>/dev/null
           fi
 
       # ── Android SDK Debug ──

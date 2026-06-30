@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'obd2/elm327_adapter.dart';
@@ -33,7 +32,6 @@ class GarageOBDApp extends StatelessWidget {
     const card = Color(0xFF13131f);
     const border = Color(0xFF1e1e32);
     const accent = Color(0xFF44aaff);
-    const accentGlow = Color(0xFF3399ee);
     const textDim = Color(0xFF556677);
     const textWhite = Color(0xFFf0f0f0);
 
@@ -111,7 +109,7 @@ class GarageOBDApp extends StatelessWidget {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: accent,
-          side: const BorderSide(color: accent.withValues(alpha: 0.5)),
+          side: BorderSide(color: accent.withValues(alpha: 0.5)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -1321,7 +1319,7 @@ class _DashboardShellState extends State<DashboardShell> {
       child: Column(
         children: [
           // ── Engine section ──
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
@@ -1384,7 +1382,7 @@ class _DashboardShellState extends State<DashboardShell> {
           const SizedBox(height: 16),
 
           // ── Live Data Grid ──
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
@@ -1438,7 +1436,7 @@ class _DashboardShellState extends State<DashboardShell> {
           const SizedBox(height: 16),
 
           // ── Quick Actions ──
-          const Padding(
+          Padding(
             padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
@@ -1469,91 +1467,32 @@ class _DashboardShellState extends State<DashboardShell> {
           Row(
             children: [
               Expanded(
-                child: Card(
-                  child: InkWell(
-                    onTap: () => _showLiveData(context, ObdCommands.ENGINE_RPM),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.show_chart,
-                            color: const Color(0xFF44aaff),
-                            size: 28,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'RPM Chart',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                child: _actionCard(
+                  Icons.speed,
+                  'RPM',
+                  'Chart',
+                  const Color(0xFF44aaff),
+                  () => _showLiveData(context, ObdCommands.ENGINE_RPM),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: Card(
-                  child: InkWell(
-                    onTap: () =>
-                        _showLiveData(context, ObdCommands.VEHICLE_SPEED),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.show_chart,
-                            color: const Color(0xFF44aaff),
-                            size: 28,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Speed Chart',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                child: _actionCard(
+                  Icons.speed,
+                  'Speed',
+                  'Chart',
+                  const Color(0xFF22cc88),
+                  () => _showLiveData(context, ObdCommands.VEHICLE_SPEED),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: Card(
-                  child: InkWell(
-                    onTap: () =>
-                        _showLiveData(context, ObdCommands.ENGINE_COOLANT_TEMP),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.show_chart,
-                            color: const Color(0xFF44aaff),
-                            size: 28,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Temp Chart',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                child: _actionCard(
+                  Icons.thermostat,
+                  'Temp',
+                  'Chart',
+                  const Color(0xFFcc6622),
+                  () => _showLiveData(context, ObdCommands.ENGINE_COOLANT_TEMP),
                 ),
               ),
             ],

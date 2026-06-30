@@ -303,7 +303,7 @@ jobs:
           flutter pub get 2>&1
 
       # ── Build ──
-      - name: 🏗 Build ${{ matrix.build_mode | default('debug') }} APK
+      - name: 🏗 Build APK
         run: |
           echo "┌─────────────────────────────────────────────┐"
           echo "│          BUILDING APK                        │"

@@ -29,7 +29,9 @@ class _LiveDataScreenState extends State<LiveDataScreen> {
   @override
   void initState() {
     super.initState();
-    _parsedDataSubscription = widget.obd2Connection.parsedDataStream.listen((data) {
+    _parsedDataSubscription = widget.obd2Connection.parsedDataStream.listen((
+      data,
+    ) {
       if (data.containsKey(widget.command.description)) {
         final valStr = data[widget.command.description];
         final val = double.tryParse(valStr ?? '0') ?? 0;
@@ -59,10 +61,10 @@ class _LiveDataScreenState extends State<LiveDataScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF12121a),
+      backgroundColor: const Color(0xFF0a0a12),
       appBar: AppBar(
         title: Text(widget.command.description),
-        backgroundColor: const Color(0xFF12121a),
+        backgroundColor: const Color(0xFF0a0a12),
       ),
       body: Column(
         children: [
@@ -71,9 +73,9 @@ class _LiveDataScreenState extends State<LiveDataScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 16),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1a1a28),
+              color: const Color(0xFF13131f),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1e1e2e)),
+              border: Border.all(color: const Color(0xFF1e1e32)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -147,7 +149,9 @@ class _LiveDataScreenState extends State<LiveDataScreen> {
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: Color(0xFF556),
-                                    fontFeatures: [FontFeature.tabularFigures()],
+                                    fontFeatures: [
+                                      FontFeature.tabularFigures(),
+                                    ],
                                   ),
                                 ),
                               );
@@ -175,7 +179,9 @@ class _LiveDataScreenState extends State<LiveDataScreen> {
                           dotData: const FlDotData(show: false),
                           belowBarData: BarAreaData(
                             show: true,
-                            color: const Color(0xFF44aaff).withValues(alpha: 0.08),
+                            color: const Color(
+                              0xFF44aaff,
+                            ).withValues(alpha: 0.08),
                           ),
                         ),
                       ],

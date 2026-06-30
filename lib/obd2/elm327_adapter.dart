@@ -7,11 +7,13 @@ import 'connection_interface.dart';
 class Elm327Adapter implements Obd2Connection {
   BluetoothConnection? _connection;
   final _rawDataController = StreamController<String>.broadcast();
-  final _parsedDataController = StreamController<Map<String, dynamic>>.broadcast();
+  final _parsedDataController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   @override
   Stream<String> get rawDataStream => _rawDataController.stream;
-  Stream<Map<String, dynamic>> get parsedDataStream => _parsedDataController.stream;
+  Stream<Map<String, dynamic>> get parsedDataStream =>
+      _parsedDataController.stream;
 
   /// Whether the adapter is currently connected.
   bool _connected = false;
@@ -59,8 +61,8 @@ class Elm327Adapter implements Obd2Connection {
 
   @override
   Future<void> disconnect() async {
-    _rawDataController.close();
-    _parsedDataController.close();
+    if (!_rawDataController.isClosed) await _rawDataController.close();
+    if (!_parsedDataController.isClosed) await _parsedDataController.close();
     try {
       await _connection?.finish();
     } catch (_) {}

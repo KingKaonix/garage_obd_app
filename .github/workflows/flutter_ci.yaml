@@ -277,21 +277,47 @@ jobs:
           fi
 
       # ── Patch flutter_bluetooth_serial for AGP 9+ compatibility ──
-      - name: 🔧 Patch flutter_bluetooth_serial (jcenter → mavenCentral + namespace)
+      - name: 🔧 Patch flutter_bluetooth_serial (jcenter → mavenCentral + namespace + AGP compat)
         run: |
-          PACKAGE_DIR="$HOME/.pub-cache/hosted/pub.dev/flutter_bluetooth_serial-0.4.0"
-          BUILD_GRADLE="$PACKAGE_DIR/android/build.gradle"
-          if [ -f "$BUILD_GRADLE" ]; then
-            echo "Patching flutter_bluetooth_serial build.gradle for AGP 9+..."
-            sed -i 's/jcenter()/mavenCentral()/g' "$BUILD_GRADLE"
-            if ! grep -q "namespace " "$BUILD_GRADLE"; then
-              sed -i '/^android {/a\\    namespace "io.github.edufolly.flutterbluetoothserial"' "$BUILD_GRADLE"
+          echo "Searching for flutter_bluetooth_serial build.gradle..."
+          PACKAGE_DIR=$(find "$HOME/.pub-cache/hosted/pub.dev/" -maxdepth 1 -type d -name "flutter_bluetooth_serial-*" 2>/dev/null | head -1)
+          if [ -z "$PACKAGE_DIR" ]; then
+            # Try alternate location
+            PACKAGE_DIR=$(find "$HOME/.pub-cache/" -path "*/flutter_bluetooth_serial-*/android" -type d 2>/dev/null | head -1 | xargs dirname 2>/dev/null)
+          fi
+          echo "Package dir: $PACKAGE_DIR"
+          
+          if [ -n "$PACKAGE_DIR" ]; then
+            BUILD_GRADLE="$PACKAGE_DIR/android/build.gradle"
+            if [ -f "$BUILD_GRADLE" ]; then
+              echo "Found build.gradle at: $BUILD_GRADLE"
+              echo "Contents BEFORE patching:"
+              head -30 "$BUILD_GRADLE"
+              echo ""
+              echo "--- Patching ---"
+              # jcenter → mavenCentral
+              sed -i 's|jcenter()|mavenCentral()|g' "$BUILD_GRADLE"
+              # Add namespace if missing (required by AGP 8+)
+              if ! grep -q "namespace " "$BUILD_GRADLE" 2>/dev/null; then
+                sed -i 's/^android {/android {\n    namespace "io.github.edufolly.flutterbluetoothserial"/' "$BUILD_GRADLE"
+              fi
+              # compileSdkVersion must be >= 34 for AGP 9+
+              sed -i 's/compileSdkVersion [0-9][0-9]/compileSdkVersion 35/g' "$BUILD_GRADLE"
+              # Update AGP in plugin (old plugin uses 4.1.0 which is incompatible with AGP 9)
+              sed -i 's|classpath .com.android.tools.build:gradle:4.1.0.|classpath "com.android.tools.build:gradle:8.7.3"|g' "$BUILD_GRADLE"
+              echo ""
+              echo "Contents AFTER patching:"
+              head -30 "$BUILD_GRADLE"
+              echo ""
+              echo "✅ Patched successfully"
+            else
+              echo "⚠️  build.gradle not found at $BUILD_GRADLE"
+              find "$PACKAGE_DIR" -name "*.gradle" -type f 2>/dev/null
             fi
-            sed -i 's/compileSdkVersion 30/compileSdkVersion 35/g' "$BUILD_GRADLE"
-            echo "✅ Patched"
           else
-            echo "⚠️  Build gradle not found"
-            find "$HOME/.pub-cache/hosted/pub.dev/" -path "*/flutter_bluetooth_serial*/android/build.gradle" 2>/dev/null
+            echo "⚠️  Could not find flutter_bluetooth_serial package"
+            echo "Listing pub cache:"
+            ls -la "$HOME/.pub-cache/hosted/pub.dev/" 2>/dev/null | head -20
           fi
 
       # ── Android SDK Debug ──

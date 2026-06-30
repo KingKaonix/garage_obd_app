@@ -1,29 +1,26 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// A premium tachometer-style gauge with segmented tick marks.
+/// A premium automotive tachometer with segmented LED-style hash marks.
 ///
-/// Layout (semicircle, bottom-half, arcs upward from approx 135° to 45°):
-///   - Outer track ring (dim)
-///   - Active segmented ticks (bright blue) up to current rpm
-///   - Inactive segmented ticks (dim) beyond current rpm
-///   - Major hash marks at 0, 2k, 4k, 6k, 8k
-///   - Redline zone marker at 8k
-///   - Glowing needle pointing to current value
-///   - Center cap
-///   - Labels under the arc
+/// Features:
+/// - Semicircular arc (bottom-open) from ~135° to ~45°
+/// - Glowing outer ring with colored active region
+/// - Individual bright tick marks (hash marks) lighting up progressively
+/// - Major labeled hash marks at each 1k RPM
+/// - Redline zone at the top of the range
+/// - Glowing needle with shadow
+/// - Center cap with accent ring
 class RpmGauge extends StatelessWidget {
   final double rpm;
   final double maxRpm;
-
-  /// Number of individual LED-style tick segments
   final int segmentCount;
 
   const RpmGauge({
     super.key,
     this.rpm = 0,
     this.maxRpm = 8000,
-    this.segmentCount = 30,
+    this.segmentCount = 40,
   });
 
   @override
@@ -38,7 +35,6 @@ class RpmGauge extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              // The painter draws: track, ticks, hash marks, needle, center cap
               Positioned.fill(
                 child: CustomPaint(
                   painter: _GaugePainter(
@@ -48,7 +44,7 @@ class RpmGauge extends StatelessWidget {
                   ),
                 ),
               ),
-              // RPM value
+              // RPM digital readout
               Positioned(
                 left: 0,
                 right: 0,
@@ -57,27 +53,27 @@ class RpmGauge extends StatelessWidget {
                   _formatRpm(rpm),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: width * 0.13,
-                    fontWeight: FontWeight.w700,
+                    fontSize: width * 0.15,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
                     letterSpacing: -2,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
               ),
-              // RPM unit label
+              // RPM label
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: height * 0.45,
+                bottom: height * 0.44,
                 child: Text(
-                  'RPM × 1000',
+                  'RPM',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: width * 0.028,
-                    color: const Color(0xFF667),
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.w500,
+                    fontSize: width * 0.032,
+                    color: const Color(0xFF889),
+                    letterSpacing: 4,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -90,9 +86,8 @@ class RpmGauge extends StatelessWidget {
 
   String _formatRpm(double value) {
     if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}k'
-          .replaceAll('.0k', ',000')
-          .replaceAll('.', ',');
+      final thousands = (value / 1000).toStringAsFixed(1);
+      return thousands.replaceAll('.', ','); // e.g. "3,500" for 3500 rpm
     }
     return value.toStringAsFixed(0);
   }
@@ -102,6 +97,7 @@ class _GaugePainter extends CustomPainter {
   final double rpm;
   final double maxRpm;
   final int segmentCount;
+  final int _majorTickCount = 8; // 0 through 8000 in 1k steps
 
   _GaugePainter({
     required this.rpm,
@@ -113,19 +109,20 @@ class _GaugePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height);
     final radius = size.width * 0.43;
-    const startAngle = math.pi * 1.35;  // ~243° → starts bottom-left
-    const sweepAngle = math.pi * 1.3;   // ~234° → ends bottom-right
+    // Arc from ~225° to ~315° (sweeping clockwise = ~234°)
+    const startAngle = math.pi * 1.20; // ~216°
+    const sweepAngle = math.pi * 1.30; // ~234° (covers most of the semicircle)
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     // ---------------------------------------------------------------
-    // 1. Outer track (thin, dim)
+    // 1. Outer glow ring - subtle background
     // ---------------------------------------------------------------
     paint
-      ..color = const Color(0xFF2a2a3e)
-      ..strokeWidth = radius * 0.08;
+      ..color = const Color(0xFF1a1a2e)
+      ..strokeWidth = radius * 0.09;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius * 0.92),
       startAngle,
@@ -135,17 +132,21 @@ class _GaugePainter extends CustomPainter {
     );
 
     // ---------------------------------------------------------------
-    // 2. Segmented tick marks (LED-style individual segments)
+    // 2. Individual hash marks (LED segments)
     // ---------------------------------------------------------------
-    final tickStartRadius = radius * 0.82;
-    final tickEndRadius = radius * 0.95;
-    final segmentAngle = sweepAngle / (segmentCount + 1);
-    final activeSegments = (rpm / maxRpm * segmentCount).round().clamp(0, segmentCount);
+    final tickStartRadius = radius * 0.84;
+    final tickEndRadius = radius * 0.96;
+    final segmentAngle = sweepAngle / segmentCount;
+    final activeSegments = (rpm / maxRpm * segmentCount).round().clamp(
+      0,
+      segmentCount,
+    );
 
-    for (int i = 1; i <= segmentCount; i++) {
-      final angle = startAngle + segmentAngle * i;
-      final isActive = i <= activeSegments;
-      final isRedline = i > segmentCount * 0.85; // Last ~15% is red zone
+    for (int i = 0; i < segmentCount; i++) {
+      final angle = startAngle + segmentAngle * (i + 0.5);
+      final isActive = i < activeSegments;
+      final rpmAtSegment = (i / segmentCount) * maxRpm;
+      final isRedline = rpmAtSegment >= maxRpm * 0.82;
 
       final tickXStart = center.dx + tickStartRadius * math.cos(angle);
       final tickYStart = center.dy + tickStartRadius * math.sin(angle);
@@ -153,15 +154,17 @@ class _GaugePainter extends CustomPainter {
       final tickYEnd = center.dy + tickEndRadius * math.sin(angle);
 
       paint
-        ..strokeWidth = radius * 0.04
+        ..strokeWidth = radius * 0.035
         ..strokeCap = StrokeCap.round;
 
       if (isActive) {
-        paint.color = isRedline
-            ? const Color(0xFFf55)  // Red for redline zone
-            : const Color(0xFF44aaff);  // Bright blue for active
+        if (isRedline) {
+          paint.color = const Color(0xFFf44);
+        } else {
+          paint.color = const Color(0xFF44aaff);
+        }
       } else {
-        paint.color = const Color(0xFF2a2a3e);  // Dim for inactive
+        paint.color = const Color(0xFF2a2a3e);
       }
 
       canvas.drawLine(
@@ -172,111 +175,167 @@ class _GaugePainter extends CustomPainter {
     }
 
     // ---------------------------------------------------------------
-    // 3. Major hash marks (longer lines at 0, 2k, 4k, 6k, 8k)
+    // 3. Active arc track (glowing path behind the needle)
     // ---------------------------------------------------------------
-    final hashPositions = [0.0, 0.25, 0.5, 0.75, 1.0];
-    final hashStartRadius = radius * 0.72;
-    final hashEndRadius = radius * 0.95;
+    if (activeSegments > 0) {
+      final activeAngle = startAngle + segmentAngle * activeSegments;
+      final activeArcPaint = Paint()
+        ..color = const Color(0xFF44aaff).withValues(alpha: 0.20)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = radius * 0.09
+        ..strokeCap = StrokeCap.round;
 
-    for (int i = 0; i < hashPositions.length; i++) {
-      final t = hashPositions[i];
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius * 0.92),
+        startAngle,
+        activeAngle - startAngle,
+        false,
+        activeArcPaint,
+      );
+    }
+
+    // ---------------------------------------------------------------
+    // 4. Major hash marks (longer lines at 0, 1k, 2k, ... 8k)
+    // ---------------------------------------------------------------
+    final majorHashStartRadius = radius * 0.72;
+    final majorHashEndRadius = radius * 0.96;
+
+    for (int i = 0; i <= _majorTickCount; i++) {
+      final t = i / _majorTickCount;
       final angle = startAngle + sweepAngle * t;
-      final isMax = i == hashPositions.length - 1; // 8k RPM redline
+      final isRedlineMark = i >= (_majorTickCount * 0.82).round();
 
+      // Major hash
       paint
         ..strokeWidth = radius * 0.05
         ..strokeCap = StrokeCap.round;
 
-      if (isMax) {
-        paint.color = const Color(0xFFf55);  // Red for redline
+      if (isRedlineMark) {
+        paint.color = const Color(0xFFf44);
       } else {
-        paint.color = const Color(0xFF556);  // Dim grey
+        paint.color = const Color(0xFF556);
       }
 
       final hashStart = Offset(
-        center.dx + hashStartRadius * math.cos(angle),
-        center.dy + hashStartRadius * math.sin(angle),
+        center.dx + majorHashStartRadius * math.cos(angle),
+        center.dy + majorHashStartRadius * math.sin(angle),
       );
       final hashEnd = Offset(
-        center.dx + hashEndRadius * math.cos(angle),
-        center.dy + hashEndRadius * math.sin(angle),
+        center.dx + majorHashEndRadius * math.cos(angle),
+        center.dy + majorHashEndRadius * math.sin(angle),
       );
 
       canvas.drawLine(hashStart, hashEnd, paint);
+
+      // Label (rpm value in thousands)
+      final labelRadius = radius * 0.66;
+      final labelPos = Offset(
+        center.dx + labelRadius * math.cos(angle),
+        center.dy + labelRadius * math.sin(angle),
+      );
+
+      final label = '${i}';
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: label,
+          style: TextStyle(
+            color: isRedlineMark ? const Color(0xFFf44) : const Color(0xFF667),
+            fontSize: radius * 0.09,
+            fontWeight: FontWeight.w600,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+      );
+      textPainter.layout();
+
+      // Position label centered on the arc at the label radius
+      final offset = Offset(
+        labelPos.dx - textPainter.width / 2,
+        labelPos.dy - textPainter.height / 2,
+      );
+      textPainter.paint(canvas, offset);
     }
 
     // ---------------------------------------------------------------
-    // 4. Needle
+    // 5. Needle
     // ---------------------------------------------------------------
-    final needleAngle = startAngle + sweepAngle * (rpm / maxRpm).clamp(0.0, 1.0);
+    final needleAngle =
+        startAngle + sweepAngle * (rpm / maxRpm).clamp(0.0, 1.0);
     final needleLength = radius * 0.78;
     final needleTip = Offset(
       center.dx + needleLength * math.cos(needleAngle),
       center.dy + needleLength * math.sin(needleAngle),
     );
 
-    // Needle glow (shadow)
+    // Needle shadow/glow
     final glowPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.bottomCenter,
-        end: Alignment.topCenter,
-        colors: [
-          const Color(0xFF44aaff).withValues(alpha: 0.4),
-          const Color(0xFF44aaff).withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromPoints(center, needleTip));
-
-    glowPaint
+      ..color = const Color(0xFF44aaff).withValues(alpha: 0.25)
       ..strokeWidth = radius * 0.15
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     canvas.drawLine(center, needleTip, glowPaint);
 
-    // Needle line
+    // Needle body
     final needlePaint = Paint()
       ..color = const Color(0xFF44aaff)
-      ..strokeWidth = radius * 0.035
+      ..strokeWidth = radius * 0.030
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
     canvas.drawLine(center, needleTip, needlePaint);
 
-    // Needle tip dot
+    // Needle tip glow
     canvas.drawCircle(
       needleTip,
-      radius * 0.03,
+      radius * 0.035,
       Paint()
-        ..color = const Color(0xFF44aaff)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+        ..color = const Color(0xFF44aaff).withValues(alpha: 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
     canvas.drawCircle(
       needleTip,
-      radius * 0.02,
+      radius * 0.015,
       Paint()..color = const Color(0xFF44aaff),
     );
 
     // ---------------------------------------------------------------
-    // 5. Center cap
+    // 6. Center cap
     // ---------------------------------------------------------------
-    final capRadius = radius * 0.06;
+    final capOuterRadius = radius * 0.07;
+    final capInnerRadius = radius * 0.04;
+
+    // Outer ring
     canvas.drawCircle(
       center,
-      capRadius,
-      Paint()..color = const Color(0xFF1a1a28)..style = PaintingStyle.fill,
+      capOuterRadius,
+      Paint()
+        ..color = const Color(0xFF1a1a28)
+        ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(
       center,
-      capRadius,
+      capOuterRadius,
       Paint()
         ..color = const Color(0xFF44aaff)
-        ..strokeWidth = radius * 0.025
+        ..strokeWidth = radius * 0.02
         ..style = PaintingStyle.stroke,
+    );
+
+    // Inner dot
+    canvas.drawCircle(
+      center,
+      capInnerRadius,
+      Paint()..color = const Color(0xFF44aaff),
     );
   }
 
   @override
   bool shouldRepaint(covariant _GaugePainter oldDelegate) {
-    return oldDelegate.rpm != rpm || oldDelegate.maxRpm != maxRpm || oldDelegate.segmentCount != segmentCount;
+    return oldDelegate.rpm != rpm ||
+        oldDelegate.maxRpm != maxRpm ||
+        oldDelegate.segmentCount != segmentCount;
   }
 }

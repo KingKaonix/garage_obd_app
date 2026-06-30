@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'obd2/elm327_adapter.dart';
@@ -28,12 +29,13 @@ class GarageOBDApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme() {
-    const bg = Color(0xFF12121a);
-    const card = Color(0xFF1a1a28);
-    const border = Color(0xFF1e1e2e);
+    const bg = Color(0xFF0a0a12);
+    const card = Color(0xFF13131f);
+    const border = Color(0xFF1e1e32);
     const accent = Color(0xFF44aaff);
-    const textDim = Color(0xFF667);
-    const textWhite = Color(0xFFfff);
+    const accentGlow = Color(0xFF3399ee);
+    const textDim = Color(0xFF556677);
+    const textWhite = Color(0xFFf0f0f0);
 
     return ThemeData(
       brightness: Brightness.dark,
@@ -46,33 +48,46 @@ class GarageOBDApp extends StatelessWidget {
         onPrimary: Colors.black,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: bg,
+        backgroundColor: Colors.transparent,
         foregroundColor: textWhite,
         elevation: 0,
         centerTitle: true,
+        scrolledUnderElevation: 0,
         titleTextStyle: TextStyle(
           color: textWhite,
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           letterSpacing: 0.5,
         ),
       ),
       cardTheme: CardThemeData(
         color: card,
         elevation: 0,
+        shadowColor: Colors.black.withValues(alpha: 0.5),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: border, width: 1),
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: border, width: 0.5),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: const Color(0xFF0e0e18),
-        indicatorColor: accent.withValues(alpha: 0.15),
+        backgroundColor: const Color(0xFF0a0a14),
+        indicatorColor: accent.withValues(alpha: 0.12),
+        elevation: 0,
+        shadowColor: Colors.transparent,
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: accent);
+            return const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: accent,
+              letterSpacing: 0.3,
+            );
           }
-          return const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: textDim);
+          return const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: textDim,
+          );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -85,25 +100,42 @@ class GarageOBDApp extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: accent,
           foregroundColor: Colors.black,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          elevation: 0,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: accent,
-          side: const BorderSide(color: accent),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          side: const BorderSide(color: accent.withValues(alpha: 0.5)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
-      dividerTheme: const DividerThemeData(color: border, thickness: 1),
+      dividerTheme: const DividerThemeData(color: border, thickness: 0.5),
       snackBarTheme: const SnackBarThemeData(
         backgroundColor: card,
-        contentTextStyle: TextStyle(color: textWhite),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+        contentTextStyle: TextStyle(
+          color: textWhite,
+          fontWeight: FontWeight.w500,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+        ),
         behavior: SnackBarBehavior.floating,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       ),
     );
   }
@@ -145,10 +177,7 @@ class _AppShellState extends State<AppShell> {
             elm327: _elm327,
             onConnectionChanged: _onConnectionChanged,
           ),
-          DashboardShell(
-            elm327: _elm327,
-            isConnected: _isConnected,
-          ),
+          DashboardShell(elm327: _elm327, isConnected: _isConnected),
           const DtcScreen(),
           const SettingsScreen(),
         ],
@@ -215,21 +244,29 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
 
   _PermState _connectPerm = _PermState.unknown;
   _PermState _locationPerm = _PermState.unknown;
+  _PermState _scanPerm = _PermState.unknown;
   bool get _allGranted =>
       _connectPerm == _PermState.granted &&
-      _locationPerm == _PermState.granted;
+      _locationPerm == _PermState.granted &&
+      _scanPerm == _PermState.granted;
 
   StreamSubscription? _discoverySub;
 
   @override
   void initState() {
     super.initState();
-    _init();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
   Future<void> _init() async {
-    await _checkPermissions();
-    await _checkBluetooth();
+    try {
+      await _checkPermissions();
+      await _checkBluetooth();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _statusText = 'Init error: $e');
+      }
+    }
   }
 
   @override
@@ -242,15 +279,18 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
   Future<void> _checkPermissions() async {
     final connectStatus = await Permission.bluetoothConnect.status;
     final locationStatus = await Permission.locationWhenInUse.status;
+    final scanStatus = await Permission.bluetoothScan.status;
 
     setState(() {
       _connectPerm = _toPerm(connectStatus);
       _locationPerm = _toPerm(locationStatus);
+      _scanPerm = _toPerm(scanStatus);
     });
 
     final toRequest = <Permission>[];
     if (connectStatus.isDenied) toRequest.add(Permission.bluetoothConnect);
     if (locationStatus.isDenied) toRequest.add(Permission.locationWhenInUse);
+    if (scanStatus.isDenied) toRequest.add(Permission.bluetoothScan);
 
     if (toRequest.isNotEmpty) {
       final statuses = await toRequest.request();
@@ -261,6 +301,9 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
           }
           if (statuses.containsKey(Permission.locationWhenInUse)) {
             _locationPerm = _toPerm(statuses[Permission.locationWhenInUse]!);
+          }
+          if (statuses.containsKey(Permission.bluetoothScan)) {
+            _scanPerm = _toPerm(statuses[Permission.bluetoothScan]!);
           }
         });
       }
@@ -321,11 +364,14 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
         (result) {
           if (mounted) {
             setState(() {
-              final exists = _devices.any((d) => d.address == result.device.address);
+              final exists = _devices.any(
+                (d) => d.address == result.device.address,
+              );
               if (!exists) {
                 _devices.add(result.device);
               }
-              _statusText = 'Found ${_devices.length} device${_devices.length == 1 ? '' : 's'}';
+              _statusText =
+                  'Found ${_devices.length} device${_devices.length == 1 ? '' : 's'}';
             });
           }
         },
@@ -341,7 +387,9 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
           if (mounted) {
             setState(() {
               _isScanning = false;
-              _statusText = _devices.isEmpty ? 'No devices found' : 'Scan complete';
+              _statusText = _devices.isEmpty
+                  ? 'No devices found'
+                  : 'Scan complete';
             });
           }
         },
@@ -384,9 +432,9 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
 
   void _showSnackbar(String msg, Color color) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: color),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
   }
 
   // ── Build ──
@@ -416,7 +464,9 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
 
   Widget _buildBody() {
     if (_connectPerm == _PermState.unknown) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF44aaff)));
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFF44aaff)),
+      );
     }
     if (!_allGranted) return _buildPermissions();
     if (!_bluetoothEnabled) return _buildBluetoothOff();
@@ -425,8 +475,10 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
 
   // ── Permissions UI ──
   Widget _buildPermissions() {
-    final anyPermanently = _connectPerm == _PermState.permanentlyDenied ||
-        _locationPerm == _PermState.permanentlyDenied;
+    final anyPermanently =
+        _connectPerm == _PermState.permanentlyDenied ||
+        _locationPerm == _PermState.permanentlyDenied ||
+        _scanPerm == _PermState.permanentlyDenied;
 
     return Center(
       child: SingleChildScrollView(
@@ -438,30 +490,58 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 80, height: 80,
+                  width: 80,
+                  height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: const Color(0xFF44aaff).withValues(alpha: 0.1),
                   ),
-                  child: const Icon(Icons.bluetooth_rounded, size: 44, color: Color(0xFF44aaff)),
+                  child: const Icon(
+                    Icons.bluetooth_rounded,
+                    size: 44,
+                    color: Color(0xFF44aaff),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
                   'Permissions Required',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Garage OBD needs these permissions to scan and connect\nto your OBD-II Bluetooth adapter.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500, height: 1.4),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade500,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 28),
-                _permissionRow(Icons.bluetooth_connected, 'Bluetooth Connect',
-                    'Pair and communicate with OBD adapter', _connectPerm),
+                _permissionRow(
+                  Icons.bluetooth_connected,
+                  'Bluetooth Connect',
+                  'Pair and communicate with OBD adapter',
+                  _connectPerm,
+                ),
                 const SizedBox(height: 12),
-                _permissionRow(Icons.location_on, 'Location (While Using)',
-                    'Required to discover Bluetooth devices', _locationPerm),
+                _permissionRow(
+                  Icons.location_on,
+                  'Location (While Using)',
+                  'Required to discover Bluetooth devices',
+                  _locationPerm,
+                ),
+                const SizedBox(height: 12),
+                _permissionRow(
+                  Icons.bluetooth_searching,
+                  'Bluetooth Scan',
+                  'Scan for nearby Bluetooth OBD devices',
+                  _scanPerm,
+                ),
                 const SizedBox(height: 28),
                 if (anyPermanently)
                   Column(
@@ -493,35 +573,83 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
     );
   }
 
-  Widget _permissionRow(IconData icon, String title, String subtitle, _PermState state) {
+  Widget _permissionRow(
+    IconData icon,
+    String title,
+    String subtitle,
+    _PermState state,
+  ) {
     final isGranted = state == _PermState.granted;
     return Row(
       children: [
         Container(
-          width: 44, height: 44,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
-            color: isGranted
-                ? Colors.green.withValues(alpha: 0.1)
-                : const Color(0xFF44aaff).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isGranted
+                  ? [
+                      Colors.green.withValues(alpha: 0.15),
+                      Colors.green.withValues(alpha: 0.05),
+                    ]
+                  : [
+                      const Color(0xFF44aaff).withValues(alpha: 0.15),
+                      const Color(0xFF44aaff).withValues(alpha: 0.05),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isGranted
+                  ? Colors.green.withValues(alpha: 0.3)
+                  : const Color(0xFF44aaff).withValues(alpha: 0.2),
+              width: 0.5,
+            ),
           ),
-          child: Icon(icon, color: isGranted ? Colors.green : const Color(0xFF44aaff), size: 22),
+          child: Icon(
+            icon,
+            color: isGranted ? Colors.green : const Color(0xFF44aaff),
+            size: 22,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white)),
-              const SizedBox(height: 2),
-              Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: Color(0xFFf0f0f0),
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 11, color: const Color(0xFF556677)),
+              ),
             ],
           ),
         ),
-        Icon(
-          isGranted ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: isGranted ? Colors.green : const Color(0xFF556),
-          size: 22,
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isGranted
+                ? Colors.green.withValues(alpha: 0.15)
+                : Colors.transparent,
+            border: Border.all(
+              color: isGranted ? Colors.green : const Color(0xFF445566),
+              width: isGranted ? 0 : 1.5,
+            ),
+          ),
+          child: isGranted
+              ? const Icon(Icons.check, color: Colors.green, size: 16)
+              : null,
         ),
       ],
     );
@@ -536,23 +664,36 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80, height: 80,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.orange.withValues(alpha: 0.1),
               ),
-              child: const Icon(Icons.bluetooth_disabled, size: 44, color: Colors.orange),
+              child: const Icon(
+                Icons.bluetooth_disabled,
+                size: 44,
+                color: Colors.orange,
+              ),
             ),
             const SizedBox(height: 20),
             const Text(
               'Bluetooth is Off',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Please enable Bluetooth to scan for\nyour OBD-II adapter.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500, height: 1.4),
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade500,
+                height: 1.4,
+              ),
             ),
             const SizedBox(height: 28),
             FilledButton.icon(
@@ -570,33 +711,57 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
   Widget _buildScanUI() {
     return Column(
       children: [
-        // Status bar
+        // Premium status bar
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          color: _isScanning
-              ? const Color(0xFF44aaff).withValues(alpha: 0.08)
-              : const Color(0xFF1a1a28),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          decoration: BoxDecoration(
+            color: _isScanning
+                ? const Color(0xFF44aaff).withValues(alpha: 0.06)
+                : const Color(0xFF13131f),
+            border: Border(
+              bottom: BorderSide(
+                color: const Color(0xFF1e1e32).withValues(alpha: 0.5),
+                width: 0.5,
+              ),
+            ),
+          ),
           child: Row(
             children: [
-              Icon(
-                _isScanning ? Icons.bluetooth_searching : Icons.bluetooth,
-                size: 18,
-                color: _isScanning ? const Color(0xFF44aaff) : const Color(0xFF556),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isScanning
+                      ? const Color(0xFF44aaff).withValues(alpha: 0.15)
+                      : const Color(0xFF556677).withValues(alpha: 0.1),
+                ),
+                child: Icon(
+                  _isScanning ? Icons.bluetooth_searching : Icons.bluetooth,
+                  size: 14,
+                  color: _isScanning
+                      ? const Color(0xFF44aaff)
+                      : const Color(0xFF556677),
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   _statusText,
                   style: TextStyle(
                     fontSize: 13,
-                    color: _isScanning ? const Color(0xFF44aaff) : const Color(0xFF667),
+                    fontWeight: FontWeight.w500,
+                    color: _isScanning
+                        ? const Color(0xFF44aaff)
+                        : const Color(0xFF778899),
                   ),
                 ),
               ),
               if (_isScanning)
                 SizedBox(
-                  width: 14, height: 14,
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: const Color(0xFF44aaff),
@@ -609,17 +774,24 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
         // Paired devices
         if (_bondedDevices.isNotEmpty && !_isScanning) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
             child: Row(
               children: [
-                Icon(Icons.bluetooth_connected, size: 14, color: Colors.green.shade400),
-                const SizedBox(width: 6),
+                Container(
+                  width: 3,
+                  height: 14,
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.all(Radius.circular(2)),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Text(
                   'Paired Devices',
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade400,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFaabbcc),
                     letterSpacing: 1,
                   ),
                 ),
@@ -643,7 +815,11 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                     child: Row(
                       children: [
-                        Icon(Icons.bluetooth_searching, size: 14, color: const Color(0xFF44aaff)),
+                        Icon(
+                          Icons.bluetooth_searching,
+                          size: 14,
+                          color: const Color(0xFF44aaff),
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Nearby Devices',
@@ -672,24 +848,36 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 80, height: 80,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: const Color(0xFF44aaff).withValues(alpha: 0.08),
                       ),
-                      child: const Icon(Icons.bluetooth_searching_rounded,
-                          size: 40, color: Color(0xFF44aaff)),
+                      child: const Icon(
+                        Icons.bluetooth_searching_rounded,
+                        size: 40,
+                        color: Color(0xFF44aaff),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     const Text(
                       'Find Your OBD-II Adapter',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Make sure your OBD adapter is plugged into\nthe vehicle and powered on.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade500, height: 1.4),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                        height: 1.4,
+                      ),
                     ),
                     const SizedBox(height: 28),
                     FilledButton.icon(
@@ -701,8 +889,10 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
                     TextButton.icon(
                       onPressed: _checkBluetooth,
                       icon: const Icon(Icons.refresh, size: 18),
-                      label: Text('Refresh paired devices',
-                          style: TextStyle(color: Colors.grey.shade500)),
+                      label: Text(
+                        'Refresh paired devices',
+                        style: TextStyle(color: Colors.grey.shade500),
+                      ),
                     ),
                     // Pairing guidance
                     const SizedBox(height: 24),
@@ -715,11 +905,19 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
                       ),
                       child: Column(
                         children: [
-                          Icon(Icons.info_outline, size: 18, color: const Color(0xFF44aaff)),
+                          Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: const Color(0xFF44aaff),
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             'Need to pair first?',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.grey.shade300),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade300,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -728,7 +926,11 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
                             '3. Pair with the device from there\n'
                             '4. Return here and tap Scan',
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade500, height: 1.5),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade500,
+                              height: 1.5,
+                            ),
                           ),
                         ],
                       ),
@@ -747,56 +949,190 @@ class _DeviceScanShellState extends State<DeviceScanShell> {
               'Tap Connect next to your OBD-II adapter.\n'
               'If you don\'t see it, make sure it\'s powered on and try scanning again.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                height: 1.4,
+              ),
             ),
           ),
       ],
     );
   }
 
-  // ── Device tile ──
+  // ── Premium device tile ──
   Widget _deviceTile(BluetoothDevice device, {bool isBonded = false}) {
     final name = (device.name != null && device.name!.isNotEmpty)
         ? device.name!
         : 'Unknown Device';
+    final isOBD =
+        name.toLowerCase().contains('obd') ||
+        name.toLowerCase().contains('elm') ||
+        name.toLowerCase().contains('scan') ||
+        name.toLowerCase().contains('link');
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       decoration: BoxDecoration(
-        color: const Color(0xFF1a1a28),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF1e1e2e)),
+        color: const Color(0xFF13131f),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isOBD
+              ? const Color(0xFF44aaff).withValues(alpha: 0.2)
+              : const Color(0xFF1e1e32).withValues(alpha: 0.5),
+        ),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Container(
-          width: 44, height: 44,
-          decoration: BoxDecoration(
-            color: (isBonded ? Colors.green : const Color(0xFF44aaff)).withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            isBonded ? Icons.bluetooth_connected : Icons.bluetooth,
-            color: isBonded ? Colors.green : const Color(0xFF44aaff),
-            size: 22,
-          ),
-        ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.white)),
-        subtitle: Text(device.address, style: const TextStyle(fontSize: 11, color: Color(0xFF667))),
-        trailing: SizedBox(
-          height: 36,
-          child: ElevatedButton(
-            onPressed: _isScanning ? null : () => _connectToDevice(device),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              backgroundColor: isBonded ? Colors.green : const Color(0xFF44aaff),
-              foregroundColor: Colors.black,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _isScanning ? null : () => _connectToDevice(device),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                // Icon
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isOBD
+                          ? [
+                              const Color(0xFF44aaff).withValues(alpha: 0.2),
+                              const Color(0xFF44aaff).withValues(alpha: 0.05),
+                            ]
+                          : [
+                              const Color(0xFF556677).withValues(alpha: 0.15),
+                              const Color(0xFF556677).withValues(alpha: 0.05),
+                            ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isOBD
+                          ? const Color(0xFF44aaff).withValues(alpha: 0.3)
+                          : const Color(0xFF1e1e32).withValues(alpha: 0.5),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Icon(
+                    isOBD ? Icons.car_repair : Icons.bluetooth,
+                    color: isOBD
+                        ? const Color(0xFF44aaff)
+                        : const Color(0xFF556677),
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                color: Color(0xFFf0f0f0),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isOBD)
+                            Container(
+                              margin: const EdgeInsets.only(left: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF44aaff,
+                                ).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'OBD-II',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF44aaff),
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        device.address,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF556677),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Connect button
+                Container(
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [
+                        isOBD
+                            ? const Color(0xFF44aaff)
+                            : const Color(0xFF556677).withValues(alpha: 0.3),
+                        isOBD
+                            ? const Color(0xFF3399ee)
+                            : const Color(0xFF556677).withValues(alpha: 0.2),
+                      ],
+                    ),
+                  ),
+                  child: ElevatedButton(
+                    onPressed: _isScanning
+                        ? null
+                        : () => _connectToDevice(device),
+                    style:
+                        ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ).copyWith(
+                          backgroundColor: WidgetStateProperty.all(
+                            Colors.transparent,
+                          ),
+                          elevation: WidgetStateProperty.all(0),
+                        ),
+                    child: Text(
+                      isOBD ? 'Connect' : 'Connect',
+                      style: TextStyle(
+                        color: isOBD ? Colors.black : const Color(0xFF778899),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            child: Text(isBonded ? 'Connect' : 'Connect'),
           ),
         ),
-        enabled: !_isScanning,
       ),
     );
   }
@@ -860,11 +1196,21 @@ class _DashboardShellState extends State<DashboardShell> {
     if (!widget.isConnected) return;
     try {
       final rpmStr = await widget.elm327.sendObdCommand(ObdCommands.ENGINE_RPM);
-      final speedStr = await widget.elm327.sendObdCommand(ObdCommands.VEHICLE_SPEED);
-      final coolStr = await widget.elm327.sendObdCommand(ObdCommands.ENGINE_COOLANT_TEMP);
-      final loadStr = await widget.elm327.sendObdCommand(ObdCommands.CALC_ENGINE_LOAD);
-      final intakeStr = await widget.elm327.sendObdCommand(ObdCommands.INTAKE_AIR_TEMP);
-      final throttleStr = await widget.elm327.sendObdCommand(ObdCommands.THROTTLE_POSITION);
+      final speedStr = await widget.elm327.sendObdCommand(
+        ObdCommands.VEHICLE_SPEED,
+      );
+      final coolStr = await widget.elm327.sendObdCommand(
+        ObdCommands.ENGINE_COOLANT_TEMP,
+      );
+      final loadStr = await widget.elm327.sendObdCommand(
+        ObdCommands.CALC_ENGINE_LOAD,
+      );
+      final intakeStr = await widget.elm327.sendObdCommand(
+        ObdCommands.INTAKE_AIR_TEMP,
+      );
+      final throttleStr = await widget.elm327.sendObdCommand(
+        ObdCommands.THROTTLE_POSITION,
+      );
       final dtcStr = await widget.elm327.sendObdCommand(ObdCommands.READ_DTC);
 
       if (mounted) {
@@ -875,7 +1221,9 @@ class _DashboardShellState extends State<DashboardShell> {
           _engineLoad = double.tryParse(loadStr) ?? 0;
           _intakeAirTemp = double.tryParse(intakeStr) ?? 0;
           _throttlePos = double.tryParse(throttleStr) ?? 0;
-          _dtcCount = dtcStr.contains('No DTC') ? '0' : '${dtcStr.split(',').length}';
+          _dtcCount = dtcStr.contains('No DTC')
+              ? '0'
+              : '${dtcStr.split(',').length}';
         });
       }
     } catch (_) {}
@@ -899,9 +1247,19 @@ class _DashboardShellState extends State<DashboardShell> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.green)),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.green,
+                      ),
+                    ),
                     const SizedBox(width: 4),
-                    const Text('Connected', style: TextStyle(fontSize: 11, color: Colors.green)),
+                    const Text(
+                      'Connected',
+                      style: TextStyle(fontSize: 11, color: Colors.green),
+                    ),
                   ],
                 ),
               ),
@@ -920,23 +1278,36 @@ class _DashboardShellState extends State<DashboardShell> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80, height: 80,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: const Color(0xFF44aaff).withValues(alpha: 0.08),
               ),
-              child: const Icon(Icons.speed, size: 40, color: Color(0xFF44aaff)),
+              child: const Icon(
+                Icons.speed,
+                size: 40,
+                color: Color(0xFF44aaff),
+              ),
             ),
             const SizedBox(height: 20),
             const Text(
               'Not Connected',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Colors.white),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Connect to an OBD-II adapter from the\nScan tab to see live data.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade500, height: 1.4),
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey.shade500,
+                height: 1.4,
+              ),
             ),
           ],
         ),
@@ -951,17 +1322,30 @@ class _DashboardShellState extends State<DashboardShell> {
         children: [
           // ── Engine section ──
           const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 8),
+            padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                'ENGINE',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF667),
-                  letterSpacing: 2,
-                ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF44aaff),
+                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'ENGINE',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF556677),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -975,9 +1359,21 @@ class _DashboardShellState extends State<DashboardShell> {
                   // Quick stats row
                   Row(
                     children: [
-                      _statTile('${_speed.toStringAsFixed(0)}', 'km/h', 'Speed'),
-                      _statTile('${_coolantTemp.toStringAsFixed(0)}°', '', 'Coolant'),
-                      _statTile('${_engineLoad.toStringAsFixed(0)}%', '', 'Load'),
+                      _statTile(
+                        '${_speed.toStringAsFixed(0)}',
+                        'km/h',
+                        'Speed',
+                      ),
+                      _statTile(
+                        '${_coolantTemp.toStringAsFixed(0)}°',
+                        '',
+                        'Coolant',
+                      ),
+                      _statTile(
+                        '${_engineLoad.toStringAsFixed(0)}%',
+                        '',
+                        'Load',
+                      ),
                     ],
                   ),
                 ],
@@ -989,17 +1385,30 @@ class _DashboardShellState extends State<DashboardShell> {
 
           // ── Live Data Grid ──
           const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 8),
+            padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                'LIVE DATA',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF667),
-                  letterSpacing: 2,
-                ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF44aaff),
+                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'LIVE DATA',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF556677),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1008,9 +1417,17 @@ class _DashboardShellState extends State<DashboardShell> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _dataRow('Intake Air Temp', '${_intakeAirTemp.toStringAsFixed(0)}°C', Icons.thermostat),
+                  _dataRow(
+                    'Intake Air Temp',
+                    '${_intakeAirTemp.toStringAsFixed(0)}°C',
+                    Icons.thermostat,
+                  ),
                   const Divider(),
-                  _dataRow('Throttle Position', '${_throttlePos.toStringAsFixed(1)}%', Icons.tune),
+                  _dataRow(
+                    'Throttle Position',
+                    '${_throttlePos.toStringAsFixed(1)}%',
+                    Icons.tune,
+                  ),
                   const Divider(),
                   _dataRow('Stored DTCs', _dtcCount, Icons.error_outline),
                 ],
@@ -1022,17 +1439,30 @@ class _DashboardShellState extends State<DashboardShell> {
 
           // ── Quick Actions ──
           const Padding(
-            padding: EdgeInsets.only(left: 4, bottom: 8),
+            padding: EdgeInsets.only(left: 4, bottom: 10),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text(
-                'ACTIONS',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF667),
-                  letterSpacing: 2,
-                ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Color(0xFF44aaff),
+                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'ACTIONS',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF556677),
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -1047,9 +1477,19 @@ class _DashboardShellState extends State<DashboardShell> {
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          Icon(Icons.show_chart, color: const Color(0xFF44aaff), size: 28),
+                          Icon(
+                            Icons.show_chart,
+                            color: const Color(0xFF44aaff),
+                            size: 28,
+                          ),
                           const SizedBox(height: 6),
-                          Text('RPM Chart', style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+                          Text(
+                            'RPM Chart',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1060,15 +1500,26 @@ class _DashboardShellState extends State<DashboardShell> {
               Expanded(
                 child: Card(
                   child: InkWell(
-                    onTap: () => _showLiveData(context, ObdCommands.VEHICLE_SPEED),
+                    onTap: () =>
+                        _showLiveData(context, ObdCommands.VEHICLE_SPEED),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          Icon(Icons.show_chart, color: const Color(0xFF44aaff), size: 28),
+                          Icon(
+                            Icons.show_chart,
+                            color: const Color(0xFF44aaff),
+                            size: 28,
+                          ),
                           const SizedBox(height: 6),
-                          Text('Speed Chart', style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+                          Text(
+                            'Speed Chart',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1079,15 +1530,26 @@ class _DashboardShellState extends State<DashboardShell> {
               Expanded(
                 child: Card(
                   child: InkWell(
-                    onTap: () => _showLiveData(context, ObdCommands.ENGINE_COOLANT_TEMP),
+                    onTap: () =>
+                        _showLiveData(context, ObdCommands.ENGINE_COOLANT_TEMP),
                     borderRadius: BorderRadius.circular(16),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         children: [
-                          Icon(Icons.show_chart, color: const Color(0xFF44aaff), size: 28),
+                          Icon(
+                            Icons.show_chart,
+                            color: const Color(0xFF44aaff),
+                            size: 28,
+                          ),
                           const SizedBox(height: 6),
-                          Text('Temp Chart', style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+                          Text(
+                            'Temp Chart',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade400,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1103,56 +1565,148 @@ class _DashboardShellState extends State<DashboardShell> {
 
   Widget _statTile(String value, String unit, String label) {
     return Expanded(
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
-              ),
-              if (unit.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2, left: 2),
-                  child: Text(
-                    unit,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF44aaff).withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: const Color(0xFF1e1e32).withValues(alpha: 0.5),
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFFf0f0f0),
+                    fontFeatures: [FontFeature.tabularFigures()],
                   ),
                 ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade600, letterSpacing: 0.5),
-          ),
-        ],
+                if (unit.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2, left: 3),
+                    child: Text(
+                      unit,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: const Color(0xFF556677),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                color: const Color(0xFF556677),
+                letterSpacing: 1,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _dataRow(String label, String value, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF44aaff)),
-          const SizedBox(width: 10),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: const Color(0xFF44aaff).withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: const Color(0xFF44aaff)),
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFFccc))),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                color: const Color(0xFFaabbcc),
+              ),
+            ),
           ),
           Text(
             value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFf0f0f0),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _actionCard(
+    IconData icon,
+    String title,
+    String subtitle,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withValues(alpha: 0.06),
+                color.withValues(alpha: 0.01),
+              ],
+            ),
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFf0f0f0),
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 10, color: Color(0xFF556677)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1167,10 +1721,8 @@ class _DashboardShellState extends State<DashboardShell> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => LiveDataScreen(
-          obd2Connection: widget.elm327,
-          command: command,
-        ),
+        builder: (_) =>
+            LiveDataScreen(obd2Connection: widget.elm327, command: command),
       ),
     );
   }
@@ -1193,23 +1745,36 @@ class DtcScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 80, height: 80,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: const Color(0xFF44aaff).withValues(alpha: 0.08),
                 ),
-                child: const Icon(Icons.error_outline, size: 40, color: Color(0xFF44aaff)),
+                child: const Icon(
+                  Icons.error_outline,
+                  size: 40,
+                  color: Color(0xFF44aaff),
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Diagnostic Trouble Codes',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Connect to an OBD-II adapter and navigate to\nthe Data tab to read DTCs.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade500, height: 1.4),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade500,
+                  height: 1.4,
+                ),
               ),
             ],
           ),
@@ -1237,19 +1802,27 @@ class SettingsScreen extends StatelessWidget {
             child: Text(
               'CONNECTION',
               style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w600,
-                color: Color(0xFF667), letterSpacing: 2,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF667),
+                letterSpacing: 2,
               ),
             ),
           ),
           Card(
             child: Column(
               children: [
-                _settingTile(Icons.bluetooth, 'Bluetooth Settings',
-                    'Manage paired devices'),
+                _settingTile(
+                  Icons.bluetooth,
+                  'Bluetooth Settings',
+                  'Manage paired devices',
+                ),
                 const Divider(),
-                _settingTile(Icons.info_outline, 'About OBD-II Adapter',
-                    'Connection info & status'),
+                _settingTile(
+                  Icons.info_outline,
+                  'About OBD-II Adapter',
+                  'Connection info & status',
+                ),
               ],
             ),
           ),
@@ -1259,19 +1832,27 @@ class SettingsScreen extends StatelessWidget {
             child: Text(
               'DATA',
               style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w600,
-                color: Color(0xFF667), letterSpacing: 2,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF667),
+                letterSpacing: 2,
               ),
             ),
           ),
           Card(
             child: Column(
               children: [
-                _settingTile(Icons.storage, 'Logging',
-                    'Manage OBD-II data logs'),
+                _settingTile(
+                  Icons.storage,
+                  'Logging',
+                  'Manage OBD-II data logs',
+                ),
                 const Divider(),
-                _settingTile(Icons.delete_outline, 'Clear Logs',
-                    'Delete all stored PID logs'),
+                _settingTile(
+                  Icons.delete_outline,
+                  'Clear Logs',
+                  'Delete all stored PID logs',
+                ),
               ],
             ),
           ),
@@ -1281,19 +1862,23 @@ class SettingsScreen extends StatelessWidget {
             child: Text(
               'ABOUT',
               style: TextStyle(
-                fontSize: 11, fontWeight: FontWeight.w600,
-                color: Color(0xFF667), letterSpacing: 2,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF667),
+                letterSpacing: 2,
               ),
             ),
           ),
           Card(
             child: Column(
               children: [
-                _settingTile(Icons.code, 'App Version',
-                    '1.0.0+1'),
+                _settingTile(Icons.code, 'App Version', '1.0.0+1'),
                 const Divider(),
-                _settingTile(Icons.favorite_outline, 'Garage OBD',
-                    'Open-source OBD-II diagnostics'),
+                _settingTile(
+                  Icons.favorite_outline,
+                  'Garage OBD',
+                  'Open-source OBD-II diagnostics',
+                ),
               ],
             ),
           ),
@@ -1305,16 +1890,31 @@ class SettingsScreen extends StatelessWidget {
   Widget _settingTile(IconData icon, String title, String subtitle) {
     return ListTile(
       leading: Container(
-        width: 40, height: 40,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: const Color(0xFF44aaff).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: const Color(0xFF44aaff), size: 20),
       ),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
-      subtitle: Text(subtitle, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-      trailing: const Icon(Icons.chevron_right, color: Color(0xFF556), size: 20),
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+      ),
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: Color(0xFF556),
+        size: 20,
+      ),
     );
   }
 }
